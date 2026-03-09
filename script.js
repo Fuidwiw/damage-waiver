@@ -76,7 +76,7 @@ function validateVisibleFields() {
       alert("Please complete all required fields before saving.");
       field.focus();
       return false;
-    }
+      }
   }
 
   if (!hasSignature) {
@@ -85,35 +85,6 @@ function validateVisibleFields() {
   }
 
   return true;
-}
-
-async function saveImageFromCanvas(canvas, filename) {
-  const blob = await new Promise(resolve => {
-    canvas.toBlob(resolve, "image/jpeg", 0.9);
-  });
-
-  if (!blob) {
-    throw new Error("Could not create image file.");
-  }
-
-  const file = new File([blob], filename, { type: "image/jpeg" });
-
-  if (navigator.canShare && navigator.canShare({ files: [file] })) {
-    await navigator.share({
-      files: [file],
-      title: "Damage Waiver",
-      text: "Save this image to Photos or upload it."
-    });
-  } else {
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.download = filename;
-    link.href = url;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(url);
-  }
 }
 
 jobType.addEventListener("change", updateSections);
@@ -140,6 +111,29 @@ saveBtn.addEventListener("click", async () => {
       windowWidth: document.documentElement.scrollWidth
     });
 
+    const imgData = canvas.toDataURL("image/jpeg", 0.95);
+    const { jsPDF } = window.jspdf;
+
+    const pdf = new jsPDF("p", "mm", "a4");
+    const pageWidth = 210;
+    const pageHeight = 297;
+
+    const imgWidth = pageWidth;
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+    let heightLeft = imgHeight;
+    let position = 0;
+
+    pdf.addImage(imgData, "JPEG", 0, position, imgWidth, imgHeight);
+    heightLeft -= pageHeight;
+
+    while (heightLeft > 0) {
+      position = heightLeft - imgHeight;
+      pdf.addPage();
+      pdf.addImage(imgData, "JPEG", 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+    }
+
     const jobNumber = document.getElementById("jobNumber").value.trim() || "NOJOB";
     let dateField = document.getElementById("serviceDate").value;
 
@@ -147,19 +141,18 @@ saveBtn.addEventListener("click", async () => {
       dateField = new Date().toISOString().split("T")[0];
     }
 
-    const filename = `${jobNumber}_${dateField}.jpg`;
+    const filename = `${jobNumber}_${dateField}.pdf`;
+    pdf.save(filename);
 
-    await saveImageFromCanvas(canvas, filename);
-
-    alert("Image ready. Save it to Photos or upload it from the share menu.");
+    alert("PDF saved. Upload this file to Towbook.");
 
     resetFormCompletely();
   } catch (error) {
-    alert("There was a problem saving the image.");
+    alert("There was a problem saving the PDF.");
     console.error(error);
   } finally {
     saveBtn.disabled = false;
-    saveBtn.textContent = "Save as Image";
+    saveBtn.textContent = "Save as PDF";
   }
 });
 
