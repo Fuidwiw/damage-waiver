@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Damage Waiver</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="page">
+    <div class="toolbar" data-html2canvas-ignore="true">
+      <button id="saveBtn" type="button">Save as Image</button>
+      <button id="resetBtn" type="button">Start Fresh</button>
+    </div>
+
+    <form id="waiverForm">
+      <div id="captureArea" class="form-card">
+        <h1>Damage Waiver</h1>
+
+        <label for="customerName">Customer Name</label>
+        <input type="text" id="customerName" name="customer_name" />
+
+        <label for="phone">Phone Number</label>
+        <input type="tel" id="phone" name="phone" />
+
+        <label for="serviceDate">Date</label>
+        <input type="date" id="serviceDate" name="date" />
+
+        <label for="vehicle">Vehicle Year / Make / Model</label>
+        <input type="text" id="vehicle" name="vehicle" />
+
+        <label for="mileage">Vehicle Mileage</label>
+        <input type="text" id="mileage" name="mileage" />
+
+        <label for="jobType">Job Type</label>
+        <select name="job_type" id="jobType">
+          <option value="">Select a job type</option>
+          <option value="lockout">Lockout</option>
+          <option value="tire">Tire Service</option>
+          <option value="fuel">Fuel Delivery</option>
+          <option value="jump">Jump Start</option>
+        </select>
+
+        <div class="section">
+          <h2>General Release</h2>
+          <p>
+            I understand that roadside assistance and vehicle handling may involve
+            risk of incidental damage, especially where prior damage, corrosion,
+            altered components, concealed defects, wheel lock issues, or other
+            vehicle conditions exist. By signing below, I authorize the requested
+            service and acknowledge the condition of the vehicle as presented. I hereby
+            release the technician and Ozark Roadside, LLC directly or indirectly of
+            all responsibility, both civil and criminal, in a court of law for any
+            damage that is not deemed negligent. I accept full responsibility should
+            any damage occur that is out of their control. Any damage claim pertaining
+            to this specific service that has been deemed neglectful by a court of law
+            or authorized arbitration center can be submitted directly to Ozark
+            Roadside, LLC. All other damage is the full responsibility of the customer.
+            Any claim without a ruling from a court/arbitration center stating the
+            damage was the result of neglect will be denied.
+          </p>
+        </div>
+
+        <div id="lockoutSection" class="job-section hidden">
+          <h2>Lockout Section</h2>
+          <p>
+            I acknowledge that lockout service may involve use of entry tools and that
+            weather stripping, trim, glass, switches, interior handles, or locking systems
+            may already be worn, damaged, or fragile. I am authorizing the use of these
+            tools on my vehicle and understand the risks associated to using these tools
+            such as scratches on the B pillar, torn weatherstripping, sprung doors,
+            interior door scratches and anything else that could be associated to the
+            use of such tools to perform the job.
+          </p>
+        </div>
+
+        <div id="tireSection" class="job-section hidden">
+          <h2>Tire Service Section</h2>
+
+          <p>
+            I acknowledge that lug nuts, wheel studs, wheels, wheel covers, TPMS components,
+            and related hardware may be rusted, swollen, seized, overtightened, cross-threaded,
+            damaged, or otherwise compromised prior to service. Due to these conditions,
+            removal of a wheel may require additional force or specialized tools and may
+            result in further damage to already compromised components including lug nuts,
+            studs, wheel covers, caps, or related hardware.
+          </p>
+
+          <p>
+            I understand that roadside tire service is intended only to temporarily return
+            the vehicle to a drivable condition so the vehicle may be moved to the nearest
+            qualified tire repair facility. Temporary spare tires are typically designed
+            for speeds not exceeding 50 mph and distances generally not exceeding
+            approximately 40 miles from the location of installation, depending on the
+            manufacturer specifications and the condition and age of the spare tire.
+          </p>
+
+          <p>
+            I acknowledge that spare tires deteriorate with age and that most temporary
+            spares have a service life of approximately 4–6 years. I accept that Ozark
+            Roadside, LLC and the technician cannot be responsible for the condition, age,
+            prior use, or failure of a spare tire or any customer-supplied equipment used
+            during the service.
+          </p>
+
+          <p>
+            If lug nuts or studs are broken, rounded, seized, cross-threaded, or otherwise
+            unable to be removed using standard methods, I authorize the technician to use
+            extractor tools or other necessary removal methods to remove the wheel and
+            install the spare tire so the vehicle can be safely returned to the roadway.
+            I understand that these procedures may cause additional damage to the affected
+            lug nuts, studs, or related components and I authorize the technician to perform
+            these procedures as necessary to complete the service.
+          </p>
+
+          <label class="checkbox-label">
+            <input type="checkbox" name="tire_acknowledgment" required />
+            I acknowledge the risks described above and authorize the technician to perform
+            the tire service including the use of extractor tools if necessary.
+          </label>
+
+          <p>
+            I acknowledge that I have been informed of these risks and I authorize the
+            technician and Ozark Roadside, LLC to perform the tire service requested.
+          </p>
+
+          <label for="lugDamageNotes">Previously Damaged Lug Nuts / Studs Noted By Technician</label>
+          <textarea
+            id="lugDamageNotes"
+            name="lug_damage_notes"
+            rows="4"
+            placeholder="Example: Front passenger side lug 2 rounded, lug 4 swollen, one stud appears cross-threaded."
+          ></textarea>
+
+          <label>Customer Approval to Use Extractor on Broken / Rounded / Seized Lug</label>
+          <div class="radio-group">
+            <label><input type="radio" name="extractorApproval" value="Approved" /> Approved</label>
+            <label><input type="radio" name="extractorApproval" value="Declined" /> Declined</label>
+          </div>
+
+          <label for="extractorNotes">Extractor / Removal Authorization Notes</label>
+          <textarea
+            id="extractorNotes"
+            name="extractor_notes"
+            rows="4"
+            placeholder="Describe which lug/stud is damaged and what removal method is being authorized."
+          ></textarea>
+
+          <div class="section">
+            <p>
+              By approving extractor or removal methods, I authorize Ozark Roadside, LLC
+              and its technician to perform the work necessary to remove the affected wheel
+              and install the spare in order to get the vehicle back on the road. I
+              understand this may involve additional damage to already compromised lug nuts,
+              studs, wheel covers, caps, or related components, and I release Ozark
+              Roadside, LLC and the technician from liability for damages resulting from
+              the authorized removal procedures necessary to complete the service, except
+              where such damage is determined to be negligent by a court of law or
+              authorized arbitration center.
+            </p>
+          </div>
+        </div>
+
+        <div id="fuelSection" class="job-section hidden">
+          <h2>Fuel Delivery Section</h2>
+          <p>
+            I confirm the fuel type requested and understand that damage may occur if
+            incorrect fuel information is provided by me.
+          </p>
+        </div>
+
+        <div id="jumpSection" class="job-section hidden">
+          <h2>Jump Start Section</h2>
+          <p>
+            I understand that battery, charging, wiring, or electrical issues may exist
+            before service and that a jump start does not correct underlying mechanical
+            or electrical faults.
+          </p>
+        </div>
+
+        <div class="section">
+          <h2>Final Vehicle Inspection Acknowledgment</h2>
+          <p>
+            I have had the opportunity to inspect my vehicle and have found it to be in
+            good working order and that no damage as a result of the service provided has
+            occurred to the vehicle including doors, door frame, paint, glass, window tint,
+            rims, lug nuts / studs, body or underbody of the vehicle. I also acknowledge
+            that all equipment such as jacks, lug wrenches, lug nut keys and special tools
+            belonging to me or the vehicle have been returned in good working order.
+          </p>
+
+          <label for="customerPrintedName">Customer Printed Name</label>
+          <input type="text" id="customerPrintedName" name="customer_printed_name" />
+
+          <label for="finalInspectionDate">Date</label>
+          <input type="date" id="finalInspectionDate" name="final_inspection_date" />
+
+          <label for="notes">Additional Notes</label>
+          <textarea id="notes" name="notes" rows="5"></textarea>
+
+          <label>Customer Signature</label>
+          <canvas id="signaturePad" class="signature-pad"></canvas>
+
+          <div class="signature-buttons" data-html2canvas-ignore="true">
+            <button type="button" id="clearSignatureBtn">Clear Signature</button>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
