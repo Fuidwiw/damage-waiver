@@ -51,9 +51,7 @@ function resetFormCompletely() {
 
 function getVisibleRequiredFields() {
   const allRequired = waiverForm.querySelectorAll("[required]");
-  return Array.from(allRequired).filter(field => {
-    return field.offsetParent !== null;
-  });
+  return Array.from(allRequired).filter(field => field.offsetParent !== null);
 }
 
 function validateVisibleFields() {
@@ -89,6 +87,35 @@ function validateVisibleFields() {
   return true;
 }
 
+async function saveImageFromCanvas(canvas, filename) {
+  const blob = await new Promise(resolve => {
+    canvas.toBlob(resolve, "image/jpeg", 0.9);
+  });
+
+  if (!blob) {
+    throw new Error("Could not create image file.");
+  }
+
+  const file = new File([blob], filename, { type: "image/jpeg" });
+
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    await navigator.share({
+      files: [file],
+      title: "Damage Waiver",
+      text: "Save this image to Photos or upload it."
+    });
+  } else {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.download = filename;
+    link.href = url;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  }
+}
+
 jobType.addEventListener("change", updateSections);
 
 resetBtn.addEventListener("click", () => {
@@ -113,23 +140,18 @@ saveBtn.addEventListener("click", async () => {
       windowWidth: document.documentElement.scrollWidth
     });
 
-    const link = document.createElement("a");
-
     const jobNumber = document.getElementById("jobNumber").value.trim() || "NOJOB";
     let dateField = document.getElementById("serviceDate").value;
 
     if (!dateField) {
-      const today = new Date();
-      dateField = today.toISOString().split("T")[0];
+      dateField = new Date().toISOString().split("T")[0];
     }
 
     const filename = `${jobNumber}_${dateField}.jpg`;
 
-    link.download = filename;
-    link.href = canvas.toDataURL("image/jpeg", 0.9);
-    link.click();
+    await saveImageFromCanvas(canvas, filename);
 
-    alert("Image saved. Upload that image wherever you need it.");
+    alert("Image ready. Save it to Photos or upload it from the share menu.");
 
     resetFormCompletely();
   } catch (error) {
