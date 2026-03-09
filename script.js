@@ -3,6 +3,8 @@ const saveBtn = document.getElementById("saveBtn");
 const resetBtn = document.getElementById("resetBtn");
 const waiverForm = document.getElementById("waiverForm");
 const captureArea = document.getElementById("captureArea");
+const jobNumberInput = document.getElementById("jobNumber");
+const jobNumberDisplay = document.getElementById("jobNumberDisplay");
 
 const sections = {
   lockout: document.getElementById("lockoutSection"),
@@ -17,6 +19,11 @@ const clearSignatureBtn = document.getElementById("clearSignatureBtn");
 let sigCtx;
 let drawing = false;
 let hasSignature = false;
+
+function updateJobNumberDisplay() {
+  const value = jobNumberInput.value.trim();
+  jobNumberDisplay.textContent = value || "ENTER JOB NUMBER";
+}
 
 function updateSections() {
   Object.values(sections).forEach(section => {
@@ -46,6 +53,7 @@ function resetFormCompletely() {
   updateSections();
   clearSignature();
   setTodayDate();
+  updateJobNumberDisplay();
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
@@ -97,27 +105,18 @@ async function saveImageFromCanvas(canvas, filename) {
     throw new Error("Could not create image file.");
   }
 
-  const file = new File([blob], filename, { type: "image/jpeg" });
-
-  if (navigator.canShare && navigator.canShare({ files: [file] })) {
-    await navigator.share({
-      files: [file],
-      title: "Damage Waiver",
-      text: "Save this image or upload it."
-    });
-  } else {
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.download = filename;
-    link.href = url;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(url);
-  }
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.download = filename;
+  link.href = url;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
 }
 
 jobType.addEventListener("change", updateSections);
+jobNumberInput.addEventListener("input", updateJobNumberDisplay);
 
 resetBtn.addEventListener("click", () => {
   if (confirm("Clear the form and start fresh?")) {
@@ -134,6 +133,8 @@ saveBtn.addEventListener("click", async () => {
   saveBtn.textContent = "Saving...";
 
   try {
+    updateJobNumberDisplay();
+
     const canvas = await html2canvas(captureArea, {
       scale: 4,
       useCORS: true,
@@ -152,7 +153,7 @@ saveBtn.addEventListener("click", async () => {
 
     await saveImageFromCanvas(canvas, filename);
 
-    alert("Image ready. Save it or upload it from the share menu.");
+    alert("Image saved.");
 
     resetFormCompletely();
   } catch (error) {
@@ -168,6 +169,7 @@ window.addEventListener("load", () => {
   updateSections();
   setupSignaturePad();
   setTodayDate();
+  updateJobNumberDisplay();
 });
 
 function resizeCanvas() {

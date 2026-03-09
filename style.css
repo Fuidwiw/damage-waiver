@@ -82,6 +82,32 @@ textarea {
   display: none;
 }
 
+.job-number-banner {
+  margin: 16px 0 20px;
+  padding: 14px 16px;
+  border: 3px solid #111;
+  border-radius: 10px;
+  background: #fff;
+  text-align: center;
+}
+
+.job-banner-label {
+  display: block;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  margin-bottom: 6px;
+}
+
+.job-banner-value {
+  display: block;
+  font-size: 48px;
+  font-weight: 900;
+  line-height: 1.1;
+  letter-spacing: 1px;
+  word-break: break-word;
+}
+
 .radio-group {
   display: flex;
   gap: 14px;
@@ -151,5 +177,9 @@ textarea {
 
   .toolbar {
     flex-direction: column;
+  }
+
+  .job-banner-value {
+    font-size: 38px;
   }
 }
