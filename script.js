@@ -11,6 +11,13 @@ const sections = {
   jump: document.getElementById("jumpSection")
 };
 
+const signatureCanvas = document.getElementById("signaturePad");
+const clearSignatureBtn = document.getElementById("clearSignatureBtn");
+
+let sigCtx;
+let drawing = false;
+let hasSignature = false;
+
 function updateSections() {
   Object.values(sections).forEach(section => {
     if (section) section.classList.add("hidden");
@@ -20,13 +27,66 @@ function updateSections() {
   if (sections[selected]) {
     sections[selected].classList.remove("hidden");
   }
+
+  const mileageInput = document.getElementById("mileage");
+  mileageInput.required = selected === "tire";
+}
+
+function setTodayDate() {
+  const serviceDate = document.getElementById("serviceDate");
+  const finalDate = document.getElementById("finalInspectionDate");
+  const today = new Date().toISOString().split("T")[0];
+
+  serviceDate.value = today;
+  finalDate.value = today;
 }
 
 function resetFormCompletely() {
   waiverForm.reset();
   updateSections();
   clearSignature();
+  setTodayDate();
   window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function getVisibleRequiredFields() {
+  const allRequired = waiverForm.querySelectorAll("[required]");
+  return Array.from(allRequired).filter(field => {
+    return field.offsetParent !== null;
+  });
+}
+
+function validateVisibleFields() {
+  const visibleRequiredFields = getVisibleRequiredFields();
+
+  for (const field of visibleRequiredFields) {
+    if (field.type === "radio") {
+      const group = waiverForm.querySelectorAll(`input[name="${field.name}"]`);
+      const oneChecked = Array.from(group).some(radio => radio.checked);
+      if (!oneChecked) {
+        alert("Please complete all required fields before saving.");
+        field.focus();
+        return false;
+      }
+    } else if (field.type === "checkbox") {
+      if (!field.checked) {
+        alert("Please complete all required fields before saving.");
+        field.focus();
+        return false;
+      }
+    } else if (!field.value || !field.value.trim()) {
+      alert("Please complete all required fields before saving.");
+      field.focus();
+      return false;
+    }
+  }
+
+  if (!hasSignature) {
+    alert("Customer signature is required before saving.");
+    return false;
+  }
+
+  return true;
 }
 
 jobType.addEventListener("change", updateSections);
@@ -38,6 +98,10 @@ resetBtn.addEventListener("click", () => {
 });
 
 saveBtn.addEventListener("click", async () => {
+  if (!validateVisibleFields()) {
+    return;
+  }
+
   saveBtn.disabled = true;
   saveBtn.textContent = "Saving...";
 
@@ -50,9 +114,19 @@ saveBtn.addEventListener("click", async () => {
     });
 
     const link = document.createElement("a");
-    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-    link.download = `damage-waiver-${timestamp}.png`;
-    link.href = canvas.toDataURL("image/png");
+
+    const jobNumber = document.getElementById("jobNumber").value.trim() || "NOJOB";
+    let dateField = document.getElementById("serviceDate").value;
+
+    if (!dateField) {
+      const today = new Date();
+      dateField = today.toISOString().split("T")[0];
+    }
+
+    const filename = `${jobNumber}_${dateField}.jpg`;
+
+    link.download = filename;
+    link.href = canvas.toDataURL("image/jpeg", 0.9);
     link.click();
 
     alert("Image saved. Upload that image wherever you need it.");
@@ -70,13 +144,8 @@ saveBtn.addEventListener("click", async () => {
 window.addEventListener("load", () => {
   updateSections();
   setupSignaturePad();
+  setTodayDate();
 });
-
-/* Signature Pad */
-const signatureCanvas = document.getElementById("signaturePad");
-const clearSignatureBtn = document.getElementById("clearSignatureBtn");
-let sigCtx;
-let drawing = false;
 
 function resizeCanvas() {
   const ratio = Math.max(window.devicePixelRatio || 1, 1);
@@ -127,6 +196,7 @@ function getCanvasPoint(e) {
 
 function startDraw(e) {
   drawing = true;
+  hasSignature = true;
   const point = getCanvasPoint(e);
   sigCtx.beginPath();
   sigCtx.moveTo(point.x, point.y);
@@ -147,4 +217,5 @@ function endDraw() {
 function clearSignature() {
   if (!sigCtx) return;
   sigCtx.clearRect(0, 0, signatureCanvas.width, signatureCanvas.height);
+  hasSignature = false;
 }

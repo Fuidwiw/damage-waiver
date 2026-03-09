@@ -18,25 +18,25 @@
         <h1>Damage Waiver</h1>
 
         <label for="jobNumber">Job Number</label>
-        <input type="text" id="jobNumber" name="job_number" />
+        <input type="text" id="jobNumber" name="job_number" required />
 
         <label for="customerName">Customer Name</label>
-        <input type="text" id="customerName" name="customer_name" />
+        <input type="text" id="customerName" name="customer_name" required />
 
         <label for="phone">Phone Number</label>
-        <input type="tel" id="phone" name="phone" />
+        <input type="tel" id="phone" name="phone" required />
 
         <label for="serviceDate">Date</label>
-        <input type="date" id="serviceDate" name="date" />
+        <input type="date" id="serviceDate" name="date" required />
 
         <label for="vehicle">Vehicle Year / Make / Model</label>
-        <input type="text" id="vehicle" name="vehicle" />
+        <input type="text" id="vehicle" name="vehicle" required />
 
         <label for="mileage">Vehicle Mileage</label>
         <input type="text" id="mileage" name="mileage" />
 
         <label for="jobType">Job Type</label>
-        <select name="job_type" id="jobType">
+        <select name="job_type" id="jobType" required>
           <option value="">Select a job type</option>
           <option value="lockout">Lockout</option>
           <option value="tire">Tire Service</option>
@@ -133,12 +133,13 @@
             name="lug_damage_notes"
             rows="4"
             placeholder="Example: Front passenger side lug 2 rounded, lug 4 swollen, one stud appears cross-threaded."
+            required
           ></textarea>
 
           <label>Customer Approval to Use Extractor on Broken / Rounded / Seized Lug</label>
           <div class="radio-group">
-            <label><input type="radio" name="extractorApproval" value="Approved" /> Approved</label>
-            <label><input type="radio" name="extractorApproval" value="Declined" /> Declined</label>
+            <label><input type="radio" name="extractorApproval" value="Approved" required /> Approved</label>
+            <label><input type="radio" name="extractorApproval" value="Declined" required /> Declined</label>
           </div>
 
           <label for="extractorNotes">Extractor / Removal Authorization Notes</label>
@@ -147,6 +148,7 @@
             name="extractor_notes"
             rows="4"
             placeholder="Describe which lug/stud is damaged and what removal method is being authorized."
+            required
           ></textarea>
 
           <div class="section">
@@ -193,13 +195,13 @@
           </p>
 
           <label for="customerPrintedName">Customer Printed Name</label>
-          <input type="text" id="customerPrintedName" name="customer_printed_name" />
+          <input type="text" id="customerPrintedName" name="customer_printed_name" required />
 
           <label for="finalInspectionDate">Date</label>
-          <input type="date" id="finalInspectionDate" name="final_inspection_date" />
+          <input type="date" id="finalInspectionDate" name="final_inspection_date" required />
 
           <label for="notes">Additional Notes</label>
-          <textarea id="notes" name="notes" rows="5"></textarea>
+          <textarea id="notes" name="notes" rows="5" required></textarea>
 
           <label>Customer Signature</label>
           <canvas id="signaturePad" class="signature-pad"></canvas>
