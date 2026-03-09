@@ -37,8 +37,8 @@ function setTodayDate() {
   const finalDate = document.getElementById("finalInspectionDate");
   const today = new Date().toISOString().split("T")[0];
 
-  serviceDate.value = today;
-  finalDate.value = today;
+  if (serviceDate) serviceDate.value = today;
+  if (finalDate) finalDate.value = today;
 }
 
 function resetFormCompletely() {
@@ -61,6 +61,7 @@ function validateVisibleFields() {
     if (field.type === "radio") {
       const group = waiverForm.querySelectorAll(`input[name="${field.name}"]`);
       const oneChecked = Array.from(group).some(radio => radio.checked);
+
       if (!oneChecked) {
         alert("Please complete all required fields before saving.");
         field.focus();
@@ -89,7 +90,7 @@ function validateVisibleFields() {
 
 async function saveImageFromCanvas(canvas, filename) {
   const blob = await new Promise(resolve => {
-    canvas.toBlob(resolve, "image/jpeg", 0.9);
+    canvas.toBlob(resolve, "image/jpeg", 0.98);
   });
 
   if (!blob) {
@@ -102,7 +103,7 @@ async function saveImageFromCanvas(canvas, filename) {
     await navigator.share({
       files: [file],
       title: "Damage Waiver",
-      text: "Save this image to Photos or upload it."
+      text: "Save this image or upload it."
     });
   } else {
     const url = URL.createObjectURL(blob);
@@ -134,7 +135,7 @@ saveBtn.addEventListener("click", async () => {
 
   try {
     const canvas = await html2canvas(captureArea, {
-      scale: 2,
+      scale: 4,
       useCORS: true,
       backgroundColor: "#ffffff",
       windowWidth: document.documentElement.scrollWidth
@@ -151,7 +152,7 @@ saveBtn.addEventListener("click", async () => {
 
     await saveImageFromCanvas(canvas, filename);
 
-    alert("Image ready. Save it to Photos or upload it from the share menu.");
+    alert("Image ready. Save it or upload it from the share menu.");
 
     resetFormCompletely();
   } catch (error) {
@@ -219,6 +220,7 @@ function getCanvasPoint(e) {
 function startDraw(e) {
   drawing = true;
   hasSignature = true;
+
   const point = getCanvasPoint(e);
   sigCtx.beginPath();
   sigCtx.moveTo(point.x, point.y);
@@ -226,6 +228,7 @@ function startDraw(e) {
 
 function draw(e) {
   if (!drawing) return;
+
   e.preventDefault();
   const point = getCanvasPoint(e);
   sigCtx.lineTo(point.x, point.y);
@@ -238,6 +241,7 @@ function endDraw() {
 
 function clearSignature() {
   if (!sigCtx) return;
+
   sigCtx.clearRect(0, 0, signatureCanvas.width, signatureCanvas.height);
   hasSignature = false;
 }
