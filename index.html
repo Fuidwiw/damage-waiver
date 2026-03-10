@@ -229,16 +229,37 @@
             name="final_inspection_date"
             required
           />
+		  
+		  <label for="notes">Additional Notes (Optional)</label>
+			<textarea
+			id="notes"
+			name="notes"
+			rows="2"
+			maxlength="200"
+			placeholder="Optional notes about the service..."
+			></textarea>
 
-          <label for="notes">Additional Notes</label>
-          <textarea id="notes" name="notes" rows="5" required></textarea>
+          <div class="verification-section">
+			<h2>Signer Verification</h2>
 
-          <label>Customer Signature</label>
-          <canvas id="signaturePad" class="signature-pad"></canvas>
+			<p class="verification-text">
+				I certify that I am the customer or authorized owner/operator of this vehicle,
+				that the information above is true, and that by signing below I intend to sign
+				and accept this waiver electronically.
+			</p>
 
-          <div class="signature-buttons" data-html2canvas-ignore="true">
-            <button type="button" id="clearSignatureBtn">Clear Signature</button>
-          </div>
+			<label class="checkbox-label">
+				<input type="checkbox" id="idVerified" name="id_verified" required />
+				Driver verified the signer is the customer or authorized owner/operator by viewing their ID.
+			</label>
+
+			<label>Customer Signature</label>
+			<canvas id="signaturePad" class="signature-pad"></canvas>
+
+			<div class="signature-buttons" data-html2canvas-ignore="true">
+				<button type="button" id="clearSignatureBtn">Clear Signature</button>
+			</div>
+		</div>
         </div>
       </div>
     </form>
