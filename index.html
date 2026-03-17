@@ -47,6 +47,7 @@
           <option value="tire">Tire Service</option>
           <option value="fuel">Fuel Delivery</option>
           <option value="jump">Jump Start</option>
+		  <option value="outofscope">Out of Scope Service</option>
         </select>
 
         <div class="section">
@@ -203,6 +204,61 @@
 			vehicle system failures beyond their control.
           </p>
         </div>
+		
+		<div id="outofscopeSection" class="job-section hidden">
+			<h2>Out of Scope Service Acknowledgment</h2>
+
+			<p>
+				I understand and acknowledge that the service being performed is not the
+				original service dispatched through Agero and is outside the scope of the
+				service request sent to Ozark Roadside, LLC.
+			</p>
+
+			<p>
+				I understand that this out of scope service is being provided solely by the
+				servicing technician as a separate arrangement between myself and the
+				servicing technician. I acknowledge that Ozark Roadside, LLC, Agero, and
+				Agero’s parent companies, subsidiaries, affiliates, agents, representatives,
+				contractors, subcontractors, and dispatching platforms are not responsible
+				for, and have no involvement in, this out of scope service.
+			</p>
+
+			<p>
+				I understand that any payment, dispute, damage claim, complaint, warranty
+				issue, or other issue related to this out of scope service must be addressed
+				directly with the servicing technician who performed the service, and not
+				with Ozark Roadside, LLC, Agero, or any of their affiliates or related
+				entities.
+			</p>
+
+			<p>
+				By approving this service, I acknowledge that I am voluntarily requesting
+				and accepting a service outside the original dispatched call and that I do so
+				at my own discretion.
+			</p>
+
+			<label for="outOfScopeServicePerformed">Describe Out of Scope Service Performed</label>
+			<textarea
+				id="outOfScopeServicePerformed"
+				name="out_of_scope_service_performed"
+				rows="3"
+				placeholder="Example: Technician removed battery terminal corrosion, installed customer-supplied battery, or performed service not included in original dispatch."
+				required
+			></textarea>
+
+			<label for="outOfScopeTechnicianName">Servicing Technician Name</label>
+			<input
+				type="text"
+				id="outOfScopeTechnicianName"
+				name="out_of_scope_technician_name"
+				required
+			/>
+
+			<label class="checkbox-label">
+				<input type="checkbox" id="outOfScopeAcknowledgment" name="out_of_scope_acknowledgment" required />
+				I understand this out of scope service is solely between me and the servicing technician and is not the responsibility of Ozark Roadside, LLC, Agero, or their affiliates.
+			</label>
+		</div>
 
         <div class="section">
           <h2>Final Vehicle Inspection Acknowledgment</h2>

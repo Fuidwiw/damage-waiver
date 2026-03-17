@@ -10,7 +10,8 @@ const sections = {
   lockout: document.getElementById("lockoutSection"),
   tire: document.getElementById("tireSection"),
   fuel: document.getElementById("fuelSection"),
-  jump: document.getElementById("jumpSection")
+  jump: document.getElementById("jumpSection"),
+  outofscope: document.getElementById("outofscopeSection")
 };
 
 const signatureCanvas = document.getElementById("signaturePad");
