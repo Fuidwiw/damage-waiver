@@ -81,107 +81,125 @@
         </div>
 
         <div id="tireSection" class="job-section hidden">
-          <h2>Tire Service Section</h2>
+  <h2>Tire Service Section</h2>
 
-          <p>
-            I acknowledge that lug nuts, wheel studs, wheels, wheel covers, TPMS
-            components, and related hardware may be rusted, swollen, seized,
-            overtightened, cross-threaded, damaged, or otherwise compromised prior
-            to service. Due to these conditions, removal of a wheel may require
-            additional force or specialized tools and may result in further damage
-            to already compromised components including lug nuts, studs, wheel
-            covers, caps, or related hardware.
-          </p>
+  <p>
+    I acknowledge that lug nuts, wheel studs, wheels, wheel covers, TPMS
+    components, and related hardware may be rusted, swollen, seized,
+    overtightened, cross-threaded, damaged, or otherwise compromised prior
+    to service. Due to these conditions, removal of a wheel may require
+    additional force or specialized tools and may result in further damage
+    to already compromised components including lug nuts, studs, wheel
+    covers, caps, or related hardware.
+  </p>
 
-          <p>
-            I understand that roadside tire service is intended only to temporarily
-            return the vehicle to a drivable condition so the vehicle may be moved
-            to the nearest qualified tire repair facility. Temporary spare tires
-            are typically designed for speeds not exceeding 50 mph and distances
-            generally not exceeding approximately 40 miles from the location of
-            installation, depending on the manufacturer specifications and the
-            condition and age of the spare tire.
-          </p>
+  <!-- NEW: Chrome-capped lug nuts waiver (exactly what you asked for) -->
+  <p>
+    <strong>Chrome-capped lug nuts:</strong> Caps may be cracked, spinning, loose, 
+    or rusted underneath prior to service. These caps are fragile and may need 
+    to be removed during normal tire service. I accept full responsibility for 
+    any pre-existing or incidental damage to chrome caps.
+  </p>
 
-          <p>
-            I acknowledge that spare tires deteriorate with age and that most
-            temporary spares have a service life of approximately 4–6 years. I
-            accept that Ozark Roadside, LLC, any contractors, dispatching platforms, including
-			Agero and its parent companies, subsidiaries, affiliates, agents, representatives, 
-			and the technician cannot be responsible for the condition, age, prior use, 
-			or failure of a spare tire or any customer-supplied equipment used during the service.
-          </p>
+  <p>
+    I understand that roadside tire service is intended only to temporarily
+    return the vehicle to a drivable condition so the vehicle may be moved
+    to the nearest qualified tire repair facility. Temporary spare tires
+    are typically designed for speeds not exceeding 50 mph and distances
+    generally not exceeding approximately 40 miles from the location of
+    installation, depending on the manufacturer specifications and the
+    condition and age of the spare tire.
+  </p>
 
-          <p>
-            If lug nuts or studs are broken, rounded, seized, cross-threaded, or
-            otherwise unable to be removed using standard methods, I authorize the
-            technician to use extractor tools or other necessary removal methods to
-            remove the wheel and install the spare tire so the vehicle can be safely
-            returned to the roadway. I understand that these procedures may cause
-            additional damage to the affected lug nuts, studs, or related
-            components and I authorize the technician to perform these procedures as
-            necessary to complete the service.
-          </p>
+  <p>
+    I acknowledge that spare tires deteriorate with age and that most
+    temporary spares have a service life of approximately 4–6 years. I
+    accept that Ozark Roadside, LLC, any contractors, dispatching platforms, including
+    Agero and its parent companies, subsidiaries, affiliates, agents, representatives, 
+    and the technician cannot be responsible for the condition, age, prior use, 
+    or failure of a spare tire or any customer-supplied equipment used during the service.
+  </p>
 
-          <label class="checkbox-label">
-            <input type="checkbox" name="tire_acknowledgment" required />
-            I acknowledge the risks described above and authorize the technician to
-            perform the tire service including the use of extractor tools if
-            necessary.
-          </label>
+  <p>
+    If lug nuts or studs are broken, rounded, seized, cross-threaded, or
+    otherwise unable to be removed using standard methods, I authorize the
+    technician to use extractor tools or other necessary removal methods to
+    remove the wheel and install the spare tire so the vehicle can be safely
+    returned to the roadway. I understand that these procedures may cause
+    additional damage to the affected lug nuts, studs, or related
+    components and I authorize the technician to perform these procedures as
+    necessary to complete the service.
+  </p>
 
-          <p>
-            I acknowledge that I have been informed of these risks and I authorize
-            the servicing technician to perform the tire service requested.
-          </p>
+  <!-- NEW: Clickable Google Drive link for stud photos (exactly what you asked for) -->
+  <p style="background:#f0f7ff; padding:16px; border-radius:8px; border-left:5px solid #1f6feb; margin:16px 0; font-size:15px;">
+    <strong>📸 Driver Reference — What to Photograph on Arrival</strong><br>
+    For visual examples of galled, stripped, broken, or rusty studs (so you know exactly what to look for and document), click here:<br>
+    <a href="https://drive.google.com/drive/folders/1_64uGfgOdw8ecGlH8KecstZC_EBGBlfQ?usp=sharing" 
+       target="_blank" 
+       style="color:#1f6feb; font-weight:700; text-decoration:underline;">
+      👉 View Stud Damage Photo Examples (Google Drive)
+    </a>
+  </p>
 
-          <label for="lugDamageNotes">
-            Previously Damaged Lug Nuts / Studs Noted By Technician
-          </label>
-          <textarea
-            id="lugDamageNotes"
-            name="lug_damage_notes"
-            rows="4"
-            placeholder="Example: Front passenger side lug 2 rounded, lug 4 swollen, one stud appears cross-threaded."
-            required
-          ></textarea>
+  <label class="checkbox-label">
+    <input type="checkbox" name="tire_acknowledgment" required />
+    I acknowledge the risks described above and authorize the technician to
+    perform the tire service including the use of extractor tools if
+    necessary.
+  </label>
 
-          <label>Customer Approval to Use Extractor on Broken / Rounded / Seized Lug</label>
-          <div class="radio-group">
-            <label>
-              <input type="radio" name="extractorApproval" value="Approved" required />
-              Approved
-            </label>
-            <label>
-              <input type="radio" name="extractorApproval" value="Declined" required />
-              Declined
-            </label>
-          </div>
+  <p>
+    I acknowledge that I have been informed of these risks and I authorize
+    the servicing technician to perform the tire service requested.
+  </p>
 
-          <label for="extractorNotes">Extractor / Removal Authorization Notes</label>
-          <textarea
-            id="extractorNotes"
-            name="extractor_notes"
-            rows="4"
-            placeholder="Describe which lug/stud is damaged and what removal method is being authorized."
-            required
-          ></textarea>
+  <label for="lugDamageNotes">
+    Previously Damaged Lug Nuts / Studs Noted By Technician
+  </label>
+  <textarea
+    id="lugDamageNotes"
+    name="lug_damage_notes"
+    rows="4"
+    placeholder="Example: Front passenger side lug 2 rounded, lug 4 swollen, one stud appears cross-threaded."
+    required
+  ></textarea>
 
-          <div class="section">
-            <p>
-              By approving extractor or removal methods, I authorize the servicing technician 
-			  to perform the work necessary to
-              remove the affected wheel and install the spare in order to get the
-              vehicle back on the road. I understand this may involve additional
-              damage to already compromised lug nuts, studs, wheel covers, caps, or
-              related components, and I release Ozark Roadside, LLC and the servicing
-              technician from liability for damages resulting from the authorized
-              removal procedures necessary to complete the service, except where
-              such damage is determined to be negligent by a court of law or
-              authorized arbitration center.
-            </p>
-          </div>
-        </div>
+  <label>Customer Approval to Use Extractor on Broken / Rounded / Seized Lug</label>
+  <div class="radio-group">
+    <label>
+      <input type="radio" name="extractorApproval" value="Approved" required />
+      Approved
+    </label>
+    <label>
+      <input type="radio" name="extractorApproval" value="Declined" required />
+      Declined
+    </label>
+  </div>
+
+  <label for="extractorNotes">Extractor / Removal Authorization Notes</label>
+  <textarea
+    id="extractorNotes"
+    name="extractor_notes"
+    rows="4"
+    placeholder="Describe which lug/stud is damaged and what removal method is being authorized."
+    required
+  ></textarea>
+
+  <div class="section">
+    <p>
+      By approving extractor or removal methods, I authorize the servicing technician 
+      to perform the work necessary to remove the affected wheel and install the spare 
+      in order to get the vehicle back on the road. I understand this may involve additional
+      damage to already compromised lug nuts, studs, wheel covers, caps, or
+      related components, and I release Ozark Roadside, LLC and the servicing
+      technician from liability for damages resulting from the authorized
+      removal procedures necessary to complete the service, except where
+      such damage is determined to be negligent by a court of law or
+      authorized arbitration center.
+    </p>
+  </div>
+</div>
 
         <div id="fuelSection" class="job-section hidden">
           <h2>Fuel Delivery Section</h2>
