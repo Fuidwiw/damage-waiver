@@ -1,3 +1,4 @@
+const API_KEY = "PlanetFitness8675309"
 const jobType = document.getElementById("jobType");
 const saveBtn = document.getElementById("saveBtn");
 const resetBtn = document.getElementById("resetBtn");
@@ -5,6 +6,7 @@ const waiverForm = document.getElementById("waiverForm");
 const captureArea = document.getElementById("captureArea");
 const jobNumberInput = document.getElementById("jobNumber");
 const jobNumberDisplay = document.getElementById("jobNumberDisplay");
+const poDisplay = document.getElementById("poDisplay");
 
 const sections = {
   lockout: document.getElementById("lockoutSection"),
@@ -16,15 +18,27 @@ const sections = {
 
 const signatureCanvas = document.getElementById("signaturePad");
 const clearSignatureBtn = document.getElementById("clearSignatureBtn");
+const pullBtn = document.getElementById("pullTowbookBtn");
+
+// CHANGE THIS LATER WHEN YOU MOVE TO NAS
+const API_URL = "https://api.ozarkdamageclaims.com";
 
 let sigCtx;
 let drawing = false;
 let hasSignature = false;
 
+// ==================== DISPLAY ====================
+
 function updateJobNumberDisplay() {
   const value = jobNumberInput.value.trim();
   jobNumberDisplay.textContent = value || "ENTER JOB NUMBER";
 }
+
+function updatePoDisplay(value = "") {
+  poDisplay.textContent = value || "NOT LOADED";
+}
+
+// ==================== SECTION CONTROL ====================
 
 function updateSections() {
   Object.values(sections).forEach(section => {
@@ -40,14 +54,15 @@ function updateSections() {
   mileageInput.required = selected === "tire";
 }
 
-function setTodayDate() {
-  const serviceDate = document.getElementById("serviceDate");
-  const finalDate = document.getElementById("finalInspectionDate");
-  const today = new Date().toISOString().split("T")[0];
+// ==================== DATE ====================
 
-  if (serviceDate) serviceDate.value = today;
-  if (finalDate) finalDate.value = today;
+function setTodayDate() {
+  const today = new Date().toISOString().split("T")[0];
+  document.getElementById("serviceDate").value = today;
+  document.getElementById("finalInspectionDate").value = today;
 }
+
+// ==================== RESET ====================
 
 function resetFormCompletely() {
   waiverForm.reset();
@@ -55,47 +70,45 @@ function resetFormCompletely() {
   clearSignature();
   setTodayDate();
   updateJobNumberDisplay();
+  updatePoDisplay("");
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
+// ==================== VALIDATION ====================
+
 function getVisibleRequiredFields() {
-  const allRequired = waiverForm.querySelectorAll("[required]");
-  return Array.from(allRequired).filter(field => field.offsetParent !== null);
+  return Array.from(waiverForm.querySelectorAll("[required]"))
+    .filter(field => field.offsetParent !== null);
 }
 
 function validateVisibleFields() {
-  const visibleRequiredFields = getVisibleRequiredFields();
-
-  for (const field of visibleRequiredFields) {
+  for (const field of getVisibleRequiredFields()) {
     if (field.type === "radio") {
       const group = waiverForm.querySelectorAll(`input[name="${field.name}"]`);
-      const oneChecked = Array.from(group).some(radio => radio.checked);
-
-      if (!oneChecked) {
-        alert("Please complete all required fields before saving.");
-        field.focus();
-        return false;
-      }
+      const oneChecked = Array.from(group).some(r => r.checked);
+      if (!oneChecked) return alertFail(field);
     } else if (field.type === "checkbox") {
-      if (!field.checked) {
-        alert("Please complete all required fields before saving.");
-        field.focus();
-        return false;
-      }
-    } else if (!field.value || !field.value.trim()) {
-      alert("Please complete all required fields before saving.");
-      field.focus();
-      return false;
+      if (!field.checked) return alertFail(field);
+    } else if (!field.value.trim()) {
+      return alertFail(field);
     }
   }
 
   if (!hasSignature) {
-    alert("Customer signature is required before saving.");
+    alert("Customer signature is required.");
     return false;
   }
 
   return true;
 }
+
+function alertFail(field) {
+  alert("Please complete all required fields.");
+  field.focus();
+  return false;
+}
+
+// ==================== SAVE IMAGE ====================
 
 async function saveImageFromCanvas(canvas, filename) {
   const blob = await new Promise(resolve => {
@@ -116,19 +129,95 @@ async function saveImageFromCanvas(canvas, filename) {
   URL.revokeObjectURL(url);
 }
 
-jobType.addEventListener("change", updateSections);
-jobNumberInput.addEventListener("input", updateJobNumberDisplay);
+// ==================== TOWBOOK ====================
 
-resetBtn.addEventListener("click", () => {
-  if (confirm("Clear the form and start fresh?")) {
-    resetFormCompletely();
+function mapJobType(reason) {
+  const r = (reason || "").toLowerCase();
+
+  if (r.includes("jump")) return "jump";
+  if (r.includes("lockout")) return "lockout";
+  if (r.includes("tire")) return "tire";
+  if (r.includes("fuel")) return "fuel";
+  if (r.includes("scope")) return "outofscope";
+
+  return "";
+}
+
+async function pullFromTowbook(jobNumber) {
+  const res = await fetch(`${API_URL}/towbook-call?jobNumber=${encodeURIComponent(jobNumber)}`, { headers: { "x-api-key": API_KEY }});
+  const data = await res.json();
+
+  if (!res.ok) {
+    throw new Error(data.error || "Towbook error.");
+  }
+
+  document.getElementById("customerName").value = data.customer_name || "";
+  document.getElementById("phone").value = data.phone || "";
+  document.getElementById("vehicle").value = data.vehicle || "";
+  updatePoDisplay(data.po || "");
+
+  if (data.job_type) {
+    const mapped = mapJobType(data.job_type);
+    if (mapped) {
+      jobType.value = mapped;
+      updateSections();
+    }
+  }
+}
+
+// ==================== BUTTON ====================
+
+pullBtn.addEventListener("click", async () => {
+  const jobNum = jobNumberInput.value.trim();
+
+  if (!jobNum || jobNum.length < 3) {
+    alert("Please enter a valid Job Number first.");
+    return;
+  }
+
+  const originalText = pullBtn.textContent;
+  pullBtn.disabled = true;
+  pullBtn.textContent = "⏳ Pulling from Towbook...";
+  pullBtn.style.background = "#666";
+
+  try {
+    await pullFromTowbook(jobNum);
+    alert("✅ Customer, vehicle, and PO pulled from Towbook!");
+  } catch (err) {
+    console.error(err);
+    alert(err.message || "Could not connect to Towbook.");
+  } finally {
+    pullBtn.disabled = false;
+    pullBtn.textContent = originalText;
+    pullBtn.style.background = "#1f6feb";
   }
 });
 
-saveBtn.addEventListener("click", async () => {
-  if (!validateVisibleFields()) {
-    return;
+// ==================== EVENTS ====================
+
+jobType.addEventListener("change", updateSections);
+
+jobNumberInput.addEventListener("input", updateJobNumberDisplay);
+
+jobNumberInput.addEventListener("change", async () => {
+  const jobNum = jobNumberInput.value.trim();
+  updateJobNumberDisplay();
+
+  if (!jobNum) return;
+
+  try {
+    await pullFromTowbook(jobNum);
+  } catch (err) {
+    console.error(err);
   }
+});
+
+resetBtn.addEventListener("click", () => {
+  if (confirm("Start fresh?")) resetFormCompletely();
+});
+
+saveBtn.addEventListener("click", async () => {
+  if (!validateVisibleFields()) return;
 
   saveBtn.disabled = true;
   saveBtn.textContent = "Saving...";
@@ -139,39 +228,27 @@ saveBtn.addEventListener("click", async () => {
     const canvas = await html2canvas(captureArea, {
       scale: 4,
       useCORS: true,
-      backgroundColor: "#ffffff",
+      backgroundColor: "#fff",
       windowWidth: document.documentElement.scrollWidth
     });
 
-    const jobNumber = document.getElementById("jobNumber").value.trim() || "NOJOB";
-    let dateField = document.getElementById("serviceDate").value;
+    const job = jobNumberInput.value.trim() || "NOJOB";
+    const date = document.getElementById("serviceDate").value || new Date().toISOString().split("T")[0];
 
-    if (!dateField) {
-      dateField = new Date().toISOString().split("T")[0];
-    }
-
-    const filename = `${jobNumber}_${dateField}.jpg`;
-
-    await saveImageFromCanvas(canvas, filename);
+    await saveImageFromCanvas(canvas, `${job}_${date}.jpg`);
 
     alert("Image saved.");
-
     resetFormCompletely();
-  } catch (error) {
-    alert("There was a problem saving the image.");
-    console.error(error);
-  } finally {
-    saveBtn.disabled = false;
-    saveBtn.textContent = "Save as Image";
+  } catch (err) {
+    console.error(err);
+    alert("Save failed.");
   }
+
+  saveBtn.disabled = false;
+  saveBtn.textContent = "Save as Image";
 });
 
-window.addEventListener("load", () => {
-  updateSections();
-  setupSignaturePad();
-  setTodayDate();
-  updateJobNumberDisplay();
-});
+// ==================== SIGNATURE ====================
 
 function resizeCanvas() {
   const ratio = Math.max(window.devicePixelRatio || 1, 1);
@@ -197,44 +274,35 @@ function setupSignaturePad() {
   signatureCanvas.addEventListener("pointerleave", endDraw);
 
   clearSignatureBtn.addEventListener("click", clearSignature);
-
   window.addEventListener("resize", handleCanvasResize);
 }
 
 function handleCanvasResize() {
   const existing = signatureCanvas.toDataURL();
   resizeCanvas();
-
   const img = new Image();
-  img.onload = () => {
-    sigCtx.drawImage(img, 0, 0, signatureCanvas.clientWidth, signatureCanvas.clientHeight);
-  };
+  img.onload = () => sigCtx.drawImage(img, 0, 0, signatureCanvas.clientWidth, signatureCanvas.clientHeight);
   img.src = existing;
 }
 
-function getCanvasPoint(e) {
+function getPoint(e) {
   const rect = signatureCanvas.getBoundingClientRect();
-  return {
-    x: e.clientX - rect.left,
-    y: e.clientY - rect.top
-  };
+  return { x: e.clientX - rect.left, y: e.clientY - rect.top };
 }
 
 function startDraw(e) {
   drawing = true;
   hasSignature = true;
-
-  const point = getCanvasPoint(e);
+  const p = getPoint(e);
   sigCtx.beginPath();
-  sigCtx.moveTo(point.x, point.y);
+  sigCtx.moveTo(p.x, p.y);
 }
 
 function draw(e) {
   if (!drawing) return;
-
   e.preventDefault();
-  const point = getCanvasPoint(e);
-  sigCtx.lineTo(point.x, point.y);
+  const p = getPoint(e);
+  sigCtx.lineTo(p.x, p.y);
   sigCtx.stroke();
 }
 
@@ -244,7 +312,16 @@ function endDraw() {
 
 function clearSignature() {
   if (!sigCtx) return;
-
   sigCtx.clearRect(0, 0, signatureCanvas.width, signatureCanvas.height);
   hasSignature = false;
 }
+
+// ==================== INIT ====================
+
+window.addEventListener("load", () => {
+  updateSections();
+  setupSignaturePad();
+  setTodayDate();
+  updateJobNumberDisplay();
+  updatePoDisplay("");
+});

@@ -21,9 +21,21 @@
           <span class="job-banner-label">JOB #</span>
           <span id="jobNumberDisplay" class="job-banner-value">ENTER JOB NUMBER</span>
         </div>
+		
+		<div class="po-banner">
+			<span class="po-banner-label">PO #</span>
+			<span id="poDisplay" class="po-banner-value">NOT LOADED</span>
+		</div>
 
         <label for="jobNumber">Job Number</label>
-        <input type="text" id="jobNumber" name="job_number" required />
+				<input type="text" id="jobNumber" name="job_number" />
+
+				<!-- Towbook Pull Button - always visible, clear, and physical -->
+				<button type="button" id="pullTowbookBtn" 
+						style="margin-top: 12px; width: 100%; padding: 16px; font-size: 17px; font-weight: bold; 
+                       background: #1f6feb; color: white; border: none; border-radius: 8px; cursor: pointer;">
+				🔄 Pull Customer & Vehicle from Towbook
+				</button>
 
         <label for="customerName">Customer Name</label>
         <input type="text" id="customerName" name="customer_name" required />

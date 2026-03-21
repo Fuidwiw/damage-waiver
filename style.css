@@ -189,3 +189,37 @@ textarea {
     font-size: 38px;
   }
 }
+
+.po-banner {
+  margin: 0 0 20px;
+  padding: 12px 16px;
+  border: 2px solid #444;
+  border-radius: 10px;
+  background: #fff;
+  text-align: center;
+}
+
+.po-banner-label {
+  display: block;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  margin-bottom: 4px;
+}
+
+.po-banner-value {
+  display: block;
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1.1;
+  word-break: break-word;
+}
+/* FORCE BLACK TEXT FIX + TOWBOOK BUTTON */
+.form-card, .form-card h1, .form-card h2, .form-card p, .form-card label, 
+.form-card span, .job-banner-value, input, select, textarea {
+    color: #222 !important;
+}
+
+#pullTowbookBtn:disabled {
+    background: #666 !important;
+}
