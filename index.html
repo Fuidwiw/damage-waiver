@@ -77,6 +77,15 @@
 			pre-existing conditions, concealed defects, or circumstances beyond the reasonable control of the 
 			service provider shall remain the responsibility of the vehicle owner or customer.
           </p>
+		  
+		  <label for="generalReleaseInitials">Customer Initials for General Release</label>
+			<input
+			type="text"
+			id="generalReleaseInitials"
+			name="general_release_initials"
+			maxlength="5"
+			required
+			/>
         </div>
 
         <div id="lockoutSection" class="job-section hidden">
@@ -90,6 +99,14 @@
             weatherstripping, sprung doors, interior door scratches and anything
             else that could be associated to the use of such tools to perform the job.
           </p>
+		  
+		    <label for="lockoutInitials">Customer Initials for Lockout Service</label>
+			<input
+			type="text"
+			id="lockoutInitials"
+			name="lockout_initials"
+			maxlength="5"
+			/>
         </div>
 
         <div id="tireSection" class="job-section hidden">
@@ -164,7 +181,15 @@
   <p>
     I acknowledge that I have been informed of these risks and I authorize
     the servicing technician to perform the tire service requested.
-  </p>
+ 
+ 	<label for="tireInitials">Customer Initials for Tire Service</label>
+		<input
+		type="text"
+		id="tireInitials"
+		name="tire_initials"
+		maxlength="5"
+		/>
+ </p>
 
   <label for="lugDamageNotes">
     Previously Damaged Lug Nuts / Studs Noted By Technician
@@ -213,13 +238,21 @@
   </div>
 </div>
 
-        <div id="fuelSection" class="job-section hidden">
-          <h2>Fuel Delivery Section</h2>
-          <p>
-            I confirm the fuel type requested and understand that damage may occur
-            if incorrect fuel information is provided by me.
-          </p>
-        </div>
+    <div id="fuelSection" class="job-section hidden">
+  <h2>Fuel Delivery Section</h2>
+  <p>
+    I confirm the fuel type requested and understand that damage may occur
+    if incorrect fuel information is provided by me.
+  </p>
+
+	<label for="fuelInitials">Customer Initials for Fuel Delivery</label>
+		<input
+			type="text"
+			id="fuelInitials"
+			name="fuel_initials"
+			maxlength="5"
+		/>
+	</div>	
 
         <div id="jumpSection" class="job-section hidden">
           <h2>Jump Start Section</h2>
@@ -233,6 +266,15 @@
 			not responsible for damage resulting from pre-existing electrical conditions or 
 			vehicle system failures beyond their control.
           </p>
+		  
+		    <label for="jumpInitials">Customer Initials for Jump Start Service</label>
+			<input
+			type="text"
+			id="jumpInitials"
+			name="jump_initials"
+			maxlength="5"
+			/>
+		  
         </div>
 			
 			<div id="outofscopeSection" class="job-section hidden">
@@ -288,6 +330,15 @@
 					<input type="checkbox" id="outOfScopeAcknowledgment" name="out_of_scope_acknowledgment" required />
 					I understand this out of scope service is solely between me and the servicing technician and is not the responsibility of Ozark Roadside, LLC, Agero, or their affiliates.
 				</label>
+				
+				<label for="outOfScopeInitials">Customer Initials for Out of Scope Service</label>
+				<input
+					type="text"
+					id="outOfScopeInitials"
+					name="out_of_scope_initials"
+					maxlength="5"
+				/>
+				
 			</div>
 
         <div class="section">

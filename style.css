@@ -241,3 +241,10 @@ textarea {
   border-style: dashed;
   border-color: #c27a7a;
 }
+
+input[id$="Initials"] {
+  max-width: 120px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  font-weight: bold;
+}

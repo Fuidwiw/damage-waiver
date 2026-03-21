@@ -1,4 +1,6 @@
-const API_KEY = "PlanetFitness8675309"
+const API_KEY = "PlanetFitness8675309";
+const API_URL = "https://api.ozarkdamageclaims.com";
+
 const jobType = document.getElementById("jobType");
 const saveBtn = document.getElementById("saveBtn");
 const resetBtn = document.getElementById("resetBtn");
@@ -24,8 +26,21 @@ const notesField = document.getElementById("notes");
 const verificationSection = document.getElementById("verificationSection");
 const idVerifiedCheckbox = document.getElementById("idVerified");
 
-// CHANGE THIS LATER WHEN YOU MOVE TO NAS
-const API_URL = "https://api.ozarkdamageclaims.com";
+const generalReleaseInitials = document.getElementById("generalReleaseInitials");
+const lockoutInitials = document.getElementById("lockoutInitials");
+const tireInitials = document.getElementById("tireInitials");
+const fuelInitials = document.getElementById("fuelInitials");
+const jumpInitials = document.getElementById("jumpInitials");
+const outOfScopeInitials = document.getElementById("outOfScopeInitials");
+
+const initialsFields = [
+  generalReleaseInitials,
+  lockoutInitials,
+  tireInitials,
+  fuelInitials,
+  jumpInitials,
+  outOfScopeInitials
+];
 
 let sigCtx;
 let drawing = false;
@@ -56,6 +71,12 @@ function updateSections() {
 
   const mileageInput = document.getElementById("mileage");
   mileageInput.required = selected === "tire";
+
+  if (lockoutInitials) lockoutInitials.required = selected === "lockout";
+  if (tireInitials) tireInitials.required = selected === "tire";
+  if (fuelInitials) fuelInitials.required = selected === "fuel";
+  if (jumpInitials) jumpInitials.required = selected === "jump";
+  if (outOfScopeInitials) outOfScopeInitials.required = selected === "outofscope";
 }
 
 // ==================== DATE ====================
@@ -93,19 +114,59 @@ function updateDeclinedToSignState() {
   if (isOverrideChecked) {
     notesField.placeholder = "Required: explain why the customer declined to sign the waiver.";
     signatureCanvas.classList.add("signature-optional");
-    verificationSection.classList.add("hidden");
-    idVerifiedCheckbox.required = false;
+
+    if (verificationSection) verificationSection.classList.add("hidden");
+    if (idVerifiedCheckbox) idVerifiedCheckbox.required = false;
   } else {
-    notesField.required = false;
     notesField.placeholder = "Optional notes about the service...";
     signatureCanvas.classList.remove("signature-optional");
-    verificationSection.classList.remove("hidden");
-    idVerifiedCheckbox.required = true;
+
+    if (verificationSection) verificationSection.classList.remove("hidden");
+    if (idVerifiedCheckbox) idVerifiedCheckbox.required = true;
   }
 }
 
 function validateVisibleFields() {
   updateDeclinedToSignState();
+  updateSections();
+
+  if (generalReleaseInitials && !generalReleaseInitials.value.trim()) {
+    alert("Customer initials are required for the General Release.");
+    generalReleaseInitials.focus();
+    return false;
+  }
+
+  const selected = jobType.value;
+
+  if (selected === "lockout" && lockoutInitials && !lockoutInitials.value.trim()) {
+    alert("Customer initials are required for the Lockout section.");
+    lockoutInitials.focus();
+    return false;
+  }
+
+  if (selected === "tire" && tireInitials && !tireInitials.value.trim()) {
+    alert("Customer initials are required for the Tire Service section.");
+    tireInitials.focus();
+    return false;
+  }
+
+  if (selected === "fuel" && fuelInitials && !fuelInitials.value.trim()) {
+    alert("Customer initials are required for the Fuel Delivery section.");
+    fuelInitials.focus();
+    return false;
+  }
+
+  if (selected === "jump" && jumpInitials && !jumpInitials.value.trim()) {
+    alert("Customer initials are required for the Jump Start section.");
+    jumpInitials.focus();
+    return false;
+  }
+
+  if (selected === "outofscope" && outOfScopeInitials && !outOfScopeInitials.value.trim()) {
+    alert("Customer initials are required for the Out of Scope section.");
+    outOfScopeInitials.focus();
+    return false;
+  }
 
   for (const field of getVisibleRequiredFields()) {
     if (field === notesField && declinedToSignOverride.checked && !field.value.trim()) {
@@ -179,7 +240,13 @@ function mapJobType(reason) {
 }
 
 async function pullFromTowbook(jobNumber) {
-  const res = await fetch(`${API_URL}/towbook-call?jobNumber=${encodeURIComponent(jobNumber)}`, { headers: { "x-api-key": API_KEY }});
+  const res = await fetch(
+    `${API_URL}/towbook-call?jobNumber=${encodeURIComponent(jobNumber)}`,
+    {
+      headers: { "x-api-key": API_KEY }
+    }
+  );
+
   const data = await res.json();
 
   if (!res.ok) {
@@ -212,15 +279,15 @@ pullBtn.addEventListener("click", async () => {
 
   const originalText = pullBtn.textContent;
   pullBtn.disabled = true;
-  pullBtn.textContent = "⏳ Gathering Info...";
+  pullBtn.textContent = "Generating Job Info...";
   pullBtn.style.background = "#666";
 
   try {
     await pullFromTowbook(jobNum);
-    alert("✅ Customer, vehicle, and PO Generated");
+    alert("✅ Job info generated successfully!");
   } catch (err) {
     console.error(err);
-    alert(err.message || "Could not connect to Server.");
+    alert(err.message || "Could not connect to Towbook.");
   } finally {
     pullBtn.disabled = false;
     pullBtn.textContent = originalText;
@@ -232,7 +299,6 @@ pullBtn.addEventListener("click", async () => {
 
 jobType.addEventListener("change", updateSections);
 declinedToSignOverride.addEventListener("change", updateDeclinedToSignState);
-
 jobNumberInput.addEventListener("input", updateJobNumberDisplay);
 
 jobNumberInput.addEventListener("change", async () => {
@@ -316,14 +382,20 @@ function setupSignaturePad() {
 function handleCanvasResize() {
   const existing = signatureCanvas.toDataURL();
   resizeCanvas();
+
   const img = new Image();
-  img.onload = () => sigCtx.drawImage(img, 0, 0, signatureCanvas.clientWidth, signatureCanvas.clientHeight);
+  img.onload = () => {
+    sigCtx.drawImage(img, 0, 0, signatureCanvas.clientWidth, signatureCanvas.clientHeight);
+  };
   img.src = existing;
 }
 
 function getPoint(e) {
   const rect = signatureCanvas.getBoundingClientRect();
-  return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  return {
+    x: e.clientX - rect.left,
+    y: e.clientY - rect.top
+  };
 }
 
 function startDraw(e) {
@@ -361,4 +433,11 @@ window.addEventListener("load", () => {
   updateJobNumberDisplay();
   updatePoDisplay("");
   updateDeclinedToSignState();
+
+  initialsFields.forEach(field => {
+    if (!field) return;
+    field.addEventListener("input", () => {
+      field.value = field.value.toUpperCase().replace(/[^A-Z]/g, "");
+    });
+  });
 });
