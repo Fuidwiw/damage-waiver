@@ -34,7 +34,7 @@
 				<button type="button" id="pullTowbookBtn" 
 						style="margin-top: 12px; width: 100%; padding: 16px; font-size: 17px; font-weight: bold; 
                        background: #1f6feb; color: white; border: none; border-radius: 8px; cursor: pointer;">
-				🔄 Pull Customer & Vehicle from Towbook
+				🔄 Generate Job Info
 				</button>
 
         <label for="customerName">Customer Name</label>
@@ -234,61 +234,61 @@
 			vehicle system failures beyond their control.
           </p>
         </div>
-		
-		<div id="outofscopeSection" class="job-section hidden">
-			<h2>Out of Scope Service Acknowledgment</h2>
+			
+			<div id="outofscopeSection" class="job-section hidden">
+				<h2>Out of Scope Service Acknowledgment</h2>
 
-			<p>
-				I understand and acknowledge that the service being performed is not the
-				original service dispatched through Agero and is outside the scope of the
-				service request sent to Ozark Roadside, LLC.
-			</p>
+				<p>
+					I understand and acknowledge that the service being performed is not the
+					original service dispatched through Agero and is outside the scope of the
+					service request sent to Ozark Roadside, LLC.
+				</p>
 
-			<p>
-				I understand that this out of scope service is being provided solely by the
-				servicing technician as a separate arrangement between myself and the
-				servicing technician. I acknowledge that Ozark Roadside, LLC, Agero, and
-				Agero’s parent companies, subsidiaries, affiliates, agents, representatives,
-				contractors, subcontractors, and dispatching platforms are not responsible
-				for, and have no involvement in, this out of scope service.
-			</p>
+				<p>
+					I understand that this out of scope service is being provided solely by the
+					servicing technician as a separate arrangement between myself and the
+					servicing technician. I acknowledge that Ozark Roadside, LLC, Agero, and
+					Agero’s parent companies, subsidiaries, affiliates, agents, representatives,
+					contractors, subcontractors, and dispatching platforms are not responsible
+					for, and have no involvement in, this out of scope service.
+				</p>
 
-			<p>
-				I understand that any payment, dispute, damage claim, complaint, warranty
-				issue, or other issue related to this out of scope service must be addressed
-				directly with the servicing technician who performed the service, and not
-				with Ozark Roadside, LLC, Agero, or any of their affiliates or related
-				entities.
-			</p>
+				<p>
+					I understand that any payment, dispute, damage claim, complaint, warranty
+					issue, or other issue related to this out of scope service must be addressed
+					directly with the servicing technician who performed the service, and not
+					with Ozark Roadside, LLC, Agero, or any of their affiliates or related
+					entities.
+				</p>
 
-			<p>
-				By approving this service, I acknowledge that I am voluntarily requesting
-				and accepting a service outside the original dispatched call and that I do so
-				at my own discretion.
-			</p>
+				<p>
+					By approving this service, I acknowledge that I am voluntarily requesting
+					and accepting a service outside the original dispatched call and that I do so
+					at my own discretion.
+				</p>
 
-			<label for="outOfScopeServicePerformed">Describe Out of Scope Service Performed</label>
-			<textarea
-				id="outOfScopeServicePerformed"
-				name="out_of_scope_service_performed"
-				rows="3"
-				placeholder="Example: Technician removed battery terminal corrosion, installed customer-supplied battery, or performed service not included in original dispatch."
-				required
-			></textarea>
+				<label for="outOfScopeServicePerformed">Describe Out of Scope Service Performed</label>
+				<textarea
+					id="outOfScopeServicePerformed"
+					name="out_of_scope_service_performed"
+					rows="3"
+					placeholder="Example: Technician removed battery terminal corrosion, installed customer-supplied battery, or performed service not included in original dispatch."
+					required
+				></textarea>
 
-			<label for="outOfScopeTechnicianName">Servicing Technician Name</label>
-			<input
-				type="text"
-				id="outOfScopeTechnicianName"
-				name="out_of_scope_technician_name"
-				required
-			/>
+				<label for="outOfScopeTechnicianName">Servicing Technician Name</label>
+				<input
+					type="text"
+					id="outOfScopeTechnicianName"
+					name="out_of_scope_technician_name"
+					required
+				/>
 
-			<label class="checkbox-label">
-				<input type="checkbox" id="outOfScopeAcknowledgment" name="out_of_scope_acknowledgment" required />
-				I understand this out of scope service is solely between me and the servicing technician and is not the responsibility of Ozark Roadside, LLC, Agero, or their affiliates.
-			</label>
-		</div>
+				<label class="checkbox-label">
+					<input type="checkbox" id="outOfScopeAcknowledgment" name="out_of_scope_acknowledgment" required />
+					I understand this out of scope service is solely between me and the servicing technician and is not the responsibility of Ozark Roadside, LLC, Agero, or their affiliates.
+				</label>
+			</div>
 
         <div class="section">
           <h2>Final Vehicle Inspection Acknowledgment</h2>
@@ -317,37 +317,47 @@
             name="final_inspection_date"
             required
           />
-		  
-		  <label for="notes">Additional Notes (Optional)</label>
-			<textarea
-			id="notes"
-			name="notes"
-			rows="2"
-			maxlength="200"
-			placeholder="Optional notes about the service..."
-			></textarea>
+			  
+			  <div class="decline-signature-section">
+            <label class="checkbox-label">
+              <input type="checkbox" id="declinedToSignOverride" name="declined_to_sign_override" />
+              Customer declined to sign waiver — driver override to allow save.
+            </label>
+            <p class="override-help-text">
+              If this box is checked, the driver must explain in Additional Notes why the customer declined to sign the waiver.
+            </p>
+          </div>
 
-          <div class="verification-section">
-			<h2>Signer Verification</h2>
+			  <label for="notes">Additional Notes</label>
+				<textarea
+				id="notes"
+				name="notes"
+				rows="3"
+				maxlength="300"
+				placeholder="Required if customer declined to sign. Explain why they refused to sign the waiver."
+				></textarea>
 
-			<p class="verification-text">
-				I certify that I am the customer or authorized owner/operator of this vehicle,
-				that the information above is true, and that by signing below I intend to sign
-				and accept this waiver electronically.
-			</p>
+          <div id="verificationSection" class="verification-section">
+				<h2>Signer Verification</h2>
 
-			<label class="checkbox-label">
-				<input type="checkbox" id="idVerified" name="id_verified" required />
-				Driver verified the signer is the customer or authorized owner/operator by viewing their ID.
-			</label>
+				<p class="verification-text">
+					I certify that I am the customer or authorized owner/operator of this vehicle,
+					that the information above is true, and that by signing below I intend to sign
+					and accept this waiver electronically.
+				</p>
 
-			<label>Customer Signature</label>
-			<canvas id="signaturePad" class="signature-pad"></canvas>
+				<label class="checkbox-label">
+					<input type="checkbox" id="idVerified" name="id_verified" required />
+					Driver verified the signer is the customer or authorized owner/operator by viewing their ID.
+				</label>
 
-			<div class="signature-buttons" data-html2canvas-ignore="true">
-				<button type="button" id="clearSignatureBtn">Clear Signature</button>
+				<label>Customer Signature</label>
+				<canvas id="signaturePad" class="signature-pad"></canvas>
+
+				<div class="signature-buttons" data-html2canvas-ignore="true">
+					<button type="button" id="clearSignatureBtn">Clear Signature</button>
+				</div>
 			</div>
-		</div>
         </div>
       </div>
     </form>

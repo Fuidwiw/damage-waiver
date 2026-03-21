@@ -19,6 +19,10 @@ const sections = {
 const signatureCanvas = document.getElementById("signaturePad");
 const clearSignatureBtn = document.getElementById("clearSignatureBtn");
 const pullBtn = document.getElementById("pullTowbookBtn");
+const declinedToSignOverride = document.getElementById("declinedToSignOverride");
+const notesField = document.getElementById("notes");
+const verificationSection = document.getElementById("verificationSection");
+const idVerifiedCheckbox = document.getElementById("idVerified");
 
 // CHANGE THIS LATER WHEN YOU MOVE TO NAS
 const API_URL = "https://api.ozarkdamageclaims.com";
@@ -71,6 +75,7 @@ function resetFormCompletely() {
   setTodayDate();
   updateJobNumberDisplay();
   updatePoDisplay("");
+  updateDeclinedToSignState();
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
@@ -81,8 +86,34 @@ function getVisibleRequiredFields() {
     .filter(field => field.offsetParent !== null);
 }
 
+function updateDeclinedToSignState() {
+  const isOverrideChecked = declinedToSignOverride.checked;
+  notesField.required = isOverrideChecked;
+
+  if (isOverrideChecked) {
+    notesField.placeholder = "Required: explain why the customer declined to sign the waiver.";
+    signatureCanvas.classList.add("signature-optional");
+    verificationSection.classList.add("hidden");
+    idVerifiedCheckbox.required = false;
+  } else {
+    notesField.required = false;
+    notesField.placeholder = "Optional notes about the service...";
+    signatureCanvas.classList.remove("signature-optional");
+    verificationSection.classList.remove("hidden");
+    idVerifiedCheckbox.required = true;
+  }
+}
+
 function validateVisibleFields() {
+  updateDeclinedToSignState();
+
   for (const field of getVisibleRequiredFields()) {
+    if (field === notesField && declinedToSignOverride.checked && !field.value.trim()) {
+      alert("Additional Notes are required when the customer declines to sign.");
+      field.focus();
+      return false;
+    }
+
     if (field.type === "radio") {
       const group = waiverForm.querySelectorAll(`input[name="${field.name}"]`);
       const oneChecked = Array.from(group).some(r => r.checked);
@@ -94,8 +125,12 @@ function validateVisibleFields() {
     }
   }
 
+  if (declinedToSignOverride.checked) {
+    return true;
+  }
+
   if (!hasSignature) {
-    alert("Customer signature is required.");
+    alert("Customer signature is required unless the decline override box is checked.");
     return false;
   }
 
@@ -177,15 +212,15 @@ pullBtn.addEventListener("click", async () => {
 
   const originalText = pullBtn.textContent;
   pullBtn.disabled = true;
-  pullBtn.textContent = "⏳ Pulling from Towbook...";
+  pullBtn.textContent = "⏳ Gathering Info...";
   pullBtn.style.background = "#666";
 
   try {
     await pullFromTowbook(jobNum);
-    alert("✅ Customer, vehicle, and PO pulled from Towbook!");
+    alert("✅ Customer, vehicle, and PO Generated");
   } catch (err) {
     console.error(err);
-    alert(err.message || "Could not connect to Towbook.");
+    alert(err.message || "Could not connect to Server.");
   } finally {
     pullBtn.disabled = false;
     pullBtn.textContent = originalText;
@@ -196,6 +231,7 @@ pullBtn.addEventListener("click", async () => {
 // ==================== EVENTS ====================
 
 jobType.addEventListener("change", updateSections);
+declinedToSignOverride.addEventListener("change", updateDeclinedToSignState);
 
 jobNumberInput.addEventListener("input", updateJobNumberDisplay);
 
@@ -324,4 +360,5 @@ window.addEventListener("load", () => {
   setTodayDate();
   updateJobNumberDisplay();
   updatePoDisplay("");
+  updateDeclinedToSignState();
 });

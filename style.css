@@ -223,3 +223,21 @@ textarea {
 #pullTowbookBtn:disabled {
     background: #666 !important;
 }
+.decline-signature-section {
+  margin-top: 16px;
+  padding: 12px 14px;
+  border: 1px solid #d8b4b4;
+  border-radius: 8px;
+  background: #fff7f7;
+}
+
+.override-help-text {
+  margin: 8px 0 0;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.signature-pad.signature-optional {
+  border-style: dashed;
+  border-color: #c27a7a;
+}
