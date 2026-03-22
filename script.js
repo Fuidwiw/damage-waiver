@@ -1,7 +1,5 @@
 const API_KEY = "PlanetFitness8675309";
-const API_URL = window.location.origin && window.location.origin.startsWith("http")
-  ? window.location.origin
-  : "http://localhost:5050";
+const API_URL = "https://api.ozarkroadside.com"
 
 const loginScreen = document.getElementById("loginScreen");
 const appScreen = document.getElementById("appScreen");
