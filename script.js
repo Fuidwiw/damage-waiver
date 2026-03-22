@@ -1,15 +1,5 @@
 const API_KEY = "PlanetFitness8675309";
-const API_URL = "https://api.ozarkroadside.com"
-
-const loginScreen = document.getElementById("loginScreen");
-const appScreen = document.getElementById("appScreen");
-const loginForm = document.getElementById("loginForm");
-const usernameInput = document.getElementById("towbookUsername");
-const loginBtn = document.getElementById("loginBtn");
-const logoutBtn = document.getElementById("logoutBtn");
-const loginMessage = document.getElementById("loginMessage");
-const authStatusText = document.getElementById("authStatusText");
-const sessionExpiryText = document.getElementById("sessionExpiryText");
+const API_URL = "https://api.ozarkdamageclaims.com";
 
 const waiverForm = document.getElementById("waiverForm");
 const captureArea = document.getElementById("captureArea");
@@ -58,145 +48,6 @@ const clearSignatureBtn = document.getElementById("clearSignatureBtn");
 let sigCtx;
 let drawing = false;
 let hasSignature = false;
-
-// ==================== AUTH ====================
-
-function setLoginMessage(message, type = "") {
-  loginMessage.textContent = message || "";
-  loginMessage.className = `login-message ${type}`.trim();
-}
-
-function formatDateTime(value) {
-  if (!value) return "";
-  try {
-    return new Date(value).toLocaleString();
-  } catch (e) {
-    return value;
-  }
-}
-
-function showLoginScreen() {
-  loginScreen.classList.remove("hidden");
-  appScreen.classList.add("hidden");
-  authStatusText.textContent = "Not logged in";
-  sessionExpiryText.textContent = "";
-}
-
-function showAppScreen(username, expiresAt) {
-  loginScreen.classList.add("hidden");
-  appScreen.classList.remove("hidden");
-  authStatusText.textContent = `Logged in as: ${username}`;
-  sessionExpiryText.textContent = `Session expires: ${formatDateTime(expiresAt)}`;
-}
-
-async function checkAuthStatus() {
-  try {
-    const res = await fetch(`${API_URL}/auth/status`, {
-      credentials: "include"
-    });
-
-    if (!res.ok) {
-      showLoginScreen();
-      return;
-    }
-
-    const data = await res.json();
-    if (data.authenticated) {
-      showAppScreen(data.username, data.expires_at);
-    } else {
-      showLoginScreen();
-    }
-  } catch (err) {
-    console.error(err);
-    showLoginScreen();
-    setLoginMessage("Could not reach the local backend.", "error");
-  }
-}
-
-async function loginTowbookUser(username) {
-  const res = await fetch(`${API_URL}/auth/login`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    credentials: "include",
-    body: JSON.stringify({ username })
-  });
-
-  const raw = await res.text();
-  let data = {};
-
-  try {
-    data = raw ? JSON.parse(raw) : {};
-  } catch (e) {
-    data = { error: raw || `Login failed (${res.status})` };
-  }
-
-  if (!res.ok) {
-    throw data;
-  }
-
-  return data;
-}
-
-async function logoutTowbookUser() {
-  await fetch(`${API_URL}/auth/logout`, {
-    method: "POST",
-    credentials: "include"
-  });
-}
-
-loginForm.addEventListener("submit", async e => {
-  e.preventDefault();
-
-  const username = usernameInput.value.trim();
-  if (!username) {
-    setLoginMessage("Please enter your Towbook username.", "error");
-    usernameInput.focus();
-    return;
-  }
-
-  loginBtn.disabled = true;
-  loginBtn.textContent = "Checking Towbook user...";
-  setLoginMessage("");
-
-  try {
-    const data = await loginTowbookUser(username);
-    showAppScreen(data.username, data.expires_at);
-    setLoginMessage("");
-    usernameInput.value = "";
-  } catch (err) {
-    console.error(err);
-
-    if (err.locked_until) {
-      setLoginMessage(
-        `That username is locked until ${formatDateTime(err.locked_until)}.`,
-        "error"
-      );
-    } else if (typeof err.remaining_attempts === "number") {
-      setLoginMessage(
-        `${err.error} Remaining attempts: ${err.remaining_attempts}.`,
-        "error"
-      );
-    } else {
-      setLoginMessage(err.error || "Login failed.", "error");
-    }
-  } finally {
-    loginBtn.disabled = false;
-    loginBtn.textContent = "Log In";
-  }
-});
-
-logoutBtn.addEventListener("click", async () => {
-  try {
-    await logoutTowbookUser();
-  } catch (err) {
-    console.error(err);
-  }
-
-  showLoginScreen();
-  setLoginMessage("You have been logged out.", "success");
-});
 
 // ==================== DISPLAY HELPERS ====================
 
@@ -399,8 +250,7 @@ async function pullFromTowbook(jobNumber) {
   const res = await fetch(
     `${API_URL}/towbook-call?jobNumber=${encodeURIComponent(jobNumber)}`,
     {
-      headers: { "x-api-key": API_KEY },
-      credentials: "include"
+      headers: { "x-api-key": API_KEY }
     }
   );
 
@@ -444,10 +294,6 @@ pullBtn.addEventListener("click", async () => {
     alert("✅ Job info generated successfully!");
   } catch (err) {
     console.error(err);
-    if ((err.message || "").toLowerCase().includes("login required")) {
-      showLoginScreen();
-      setLoginMessage("Your session expired. Please log in again.", "error");
-    }
     alert(err.message || "Could not connect to Towbook.");
   } finally {
     pullBtn.disabled = false;
@@ -479,6 +325,22 @@ resetBtn.addEventListener("click", () => {
   if (confirm("Start fresh?")) resetFormCompletely();
 });
 
+function showIphoneSaveInstructions() {
+  const isIphone = /iPhone/i.test(navigator.userAgent);
+  if (!isIphone) return;
+
+  alert(
+    "IMPORTANT FOR IPHONE USERS\n\n" +
+    "Your waiver was saved to Files/Downloads.\n\n" +
+    "To move it to Photos:\n" +
+    "1. Open the saved file\n" +
+    "2. Tap the Share icon\n" +
+    "3. Tap Save Image\n\n" +
+    "DO NOT screenshot the waiver.\n" +
+    "Screenshots can make the text unreadable."
+  );
+}
+
 saveBtn.addEventListener("click", async () => {
   if (!validateVisibleFields()) return;
 
@@ -501,6 +363,7 @@ saveBtn.addEventListener("click", async () => {
     await saveImageFromCanvas(canvas, `${job}_${date}.jpg`);
 
     alert("Image saved.");
+	showIphoneSaveInstructions();
     resetFormCompletely();
   } catch (err) {
     console.error(err);
@@ -587,7 +450,7 @@ function clearSignature() {
 
 // ==================== INIT ====================
 
-window.addEventListener("load", async () => {
+window.addEventListener("load", () => {
   updateSections();
   setupSignaturePad();
   setTodayDate();
@@ -601,6 +464,4 @@ window.addEventListener("load", async () => {
       field.value = field.value.toUpperCase().replace(/[^A-Z]/g, "");
     });
   });
-
-  await checkAuthStatus();
 });
