@@ -17,9 +17,14 @@
       <div id="captureArea" class="form-card">
         <h1>Damage Waiver</h1>
 
-        <div class="job-number-banner">
-          <span class="job-banner-label">JOB #</span>
-          <span id="jobNumberDisplay" class="job-banner-value">ENTER JOB NUMBER</span>
+        <div class="job-header-row">
+          <div class="job-number-banner">
+            <span class="job-banner-label">JOB #</span>
+            <span id="jobNumberDisplay" class="job-banner-value">ENTER JOB NUMBER</span>
+          </div>
+          <div id="declinedSignMarker" class="declined-sign-marker hidden" aria-live="polite" aria-label="Customer refused to sign">
+            X
+          </div>
         </div>
 		
 		<div class="po-banner">
@@ -122,7 +127,6 @@
     covers, caps, or related hardware.
   </p>
 
-  <!-- NEW: Chrome-capped lug nuts waiver (exactly what you asked for) -->
   <p>
     <strong>Chrome-capped lug nuts:</strong> Caps may be cracked, spinning, loose, 
     or rusted underneath prior to service. These caps are fragile and may need 
@@ -160,7 +164,6 @@
     necessary to complete the service.
   </p>
 
-  <!-- NEW: Clickable Google Drive link for stud photos (exactly what you asked for) -->
   <p style="background:#f0f7ff; padding:16px; border-radius:8px; border-left:5px solid #1f6feb; margin:16px 0; font-size:15px;">
     <strong>📸 Driver Reference — What to Photograph on Arrival</strong><br>
     For visual examples of galled, stripped, broken, or rusty studs (so you know exactly what to look for and document), click here:<br>
@@ -225,34 +228,33 @@
 
   <div class="section">
     <p>
-      By approving extractor or removal methods, I authorize the servicing technician 
-      to perform the work necessary to remove the affected wheel and install the spare 
-      in order to get the vehicle back on the road. I understand this may involve additional
-      damage to already compromised lug nuts, studs, wheel covers, caps, or
-      related components, and I release Ozark Roadside, LLC and the servicing
-      technician from liability for damages resulting from the authorized
-      removal procedures necessary to complete the service, except where
-      such damage is determined to be negligent by a court of law or
-      authorized arbitration center.
+      By approving extractor or removal methods, I authorize the servicing technician
+      to attempt wheel removal using standard extraction procedures. I understand that
+      this may further damage already compromised lug nuts, studs, wheel covers, caps,
+      or related components and I accept responsibility for those conditions where they
+      are pre-existing or incidental to the approved removal process.
     </p>
   </div>
 </div>
 
-    <div id="fuelSection" class="job-section hidden">
-  <h2>Fuel Delivery Section</h2>
-  <p>
-    I confirm the fuel type requested and understand that damage may occur
-    if incorrect fuel information is provided by me.
-  </p>
-
-	<label for="fuelInitials">Customer Initials for Fuel Delivery</label>
-		<input
+        <div id="fuelSection" class="job-section hidden">
+          <h2>Fuel Delivery Section</h2>
+          <p>
+            I understand that adding fuel to a vehicle carries risks if the wrong fuel
+            type is requested or if there are pre-existing mechanical issues. I confirm
+            that I have requested the correct fuel type for my vehicle and accept
+            responsibility for any issues arising from incorrect fuel information
+            provided by me.
+          </p>
+		  
+		  <label for="fuelInitials">Customer Initials for Fuel Delivery</label>
+			<input
 			type="text"
 			id="fuelInitials"
 			name="fuel_initials"
 			maxlength="3"
-		/>
-	</div>	
+			/>
+        </div>
 
         <div id="jumpSection" class="job-section hidden">
           <h2>Jump Start Section</h2>
@@ -372,7 +374,7 @@
 			  <div class="decline-signature-section">
             <label class="checkbox-label">
               <input type="checkbox" id="declinedToSignOverride" name="declined_to_sign_override" />
-              Customer declined to sign waiver — driver override to allow save.
+              Customer declined to sign waiver
             </label>
             <p class="override-help-text">
               If this box is checked, the driver must explain in Additional Notes why the customer declined to sign the waiver.

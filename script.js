@@ -1,30 +1,16 @@
 const API_KEY = "PlanetFitness8675309";
 const API_URL = "https://api.ozarkdamageclaims.com";
 
-const jobType = document.getElementById("jobType");
-const saveBtn = document.getElementById("saveBtn");
-const resetBtn = document.getElementById("resetBtn");
 const waiverForm = document.getElementById("waiverForm");
 const captureArea = document.getElementById("captureArea");
+const saveBtn = document.getElementById("saveBtn");
+const resetBtn = document.getElementById("resetBtn");
+
 const jobNumberInput = document.getElementById("jobNumber");
 const jobNumberDisplay = document.getElementById("jobNumberDisplay");
 const poDisplay = document.getElementById("poDisplay");
-
-const sections = {
-  lockout: document.getElementById("lockoutSection"),
-  tire: document.getElementById("tireSection"),
-  fuel: document.getElementById("fuelSection"),
-  jump: document.getElementById("jumpSection"),
-  outofscope: document.getElementById("outofscopeSection")
-};
-
-const signatureCanvas = document.getElementById("signaturePad");
-const clearSignatureBtn = document.getElementById("clearSignatureBtn");
 const pullBtn = document.getElementById("pullTowbookBtn");
-const declinedToSignOverride = document.getElementById("declinedToSignOverride");
-const notesField = document.getElementById("notes");
-const verificationSection = document.getElementById("verificationSection");
-const idVerifiedCheckbox = document.getElementById("idVerified");
+const jobType = document.getElementById("jobType");
 
 const generalReleaseInitials = document.getElementById("generalReleaseInitials");
 const lockoutInitials = document.getElementById("lockoutInitials");
@@ -42,11 +28,28 @@ const initialsFields = [
   outOfScopeInitials
 ];
 
+const sections = {
+  lockout: document.getElementById("lockoutSection"),
+  tire: document.getElementById("tireSection"),
+  fuel: document.getElementById("fuelSection"),
+  jump: document.getElementById("jumpSection"),
+  outofscope: document.getElementById("outofscopeSection")
+};
+
+const notesField = document.getElementById("notes");
+const declinedToSignOverride = document.getElementById("declinedToSignOverride");
+const declinedSignMarker = document.getElementById("declinedSignMarker");
+const verificationSection = document.getElementById("verificationSection");
+const idVerifiedCheckbox = document.getElementById("idVerified");
+
+const signatureCanvas = document.getElementById("signaturePad");
+const clearSignatureBtn = document.getElementById("clearSignatureBtn");
+
 let sigCtx;
 let drawing = false;
 let hasSignature = false;
 
-// ==================== DISPLAY ====================
+// ==================== DISPLAY HELPERS ====================
 
 function updateJobNumberDisplay() {
   const value = jobNumberInput.value.trim();
@@ -110,6 +113,10 @@ function getVisibleRequiredFields() {
 function updateDeclinedToSignState() {
   const isOverrideChecked = declinedToSignOverride.checked;
   notesField.required = isOverrideChecked;
+
+  if (declinedSignMarker) {
+    declinedSignMarker.classList.toggle("hidden", !isOverrideChecked);
+  }
 
   if (isOverrideChecked) {
     notesField.placeholder = "Required: explain why the customer declined to sign the waiver.";

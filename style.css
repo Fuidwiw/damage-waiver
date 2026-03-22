@@ -85,7 +85,7 @@ textarea {
 }
 
 .hidden {
-  display: none;
+  display: none !important;
 }
 
 .job-number-banner {
@@ -214,6 +214,7 @@ textarea {
   line-height: 1.1;
   word-break: break-word;
 }
+
 /* FORCE BLACK TEXT FIX + TOWBOOK BUTTON */
 .form-card, .form-card h1, .form-card h2, .form-card p, .form-card label, 
 .form-card span, .job-banner-value, input, select, textarea {
@@ -223,6 +224,7 @@ textarea {
 #pullTowbookBtn:disabled {
     background: #666 !important;
 }
+
 .decline-signature-section {
   margin-top: 16px;
   padding: 12px 14px;
@@ -247,4 +249,44 @@ input[id$="Initials"] {
   text-transform: uppercase;
   letter-spacing: 2px;
   font-weight: bold;
+}
+
+.job-header-row {
+  display: flex;
+  align-items: stretch;
+  gap: 16px;
+  margin: 16px 0 20px;
+}
+
+.job-header-row .job-number-banner {
+  flex: 1;
+  margin: 0;
+}
+
+.declined-sign-marker {
+  min-width: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 4px solid #b30000;
+  border-radius: 12px;
+  background: #fff1f1;
+  color: #c40000 !important;
+  font-size: 88px;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: 2px;
+  box-shadow: 0 2px 6px rgba(179, 0, 0, 0.18);
+}
+
+@media (max-width: 640px) {
+  .job-header-row {
+    flex-direction: column;
+  }
+
+  .declined-sign-marker {
+    min-width: 100%;
+    min-height: 110px;
+    font-size: 76px;
+  }
 }
