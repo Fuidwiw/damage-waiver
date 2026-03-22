@@ -125,7 +125,14 @@ async function loginTowbookUser(username) {
     body: JSON.stringify({ username })
   });
 
-  const data = await res.json().catch(() => ({}));
+  const raw = await res.text();
+  let data = {};
+
+  try {
+    data = raw ? JSON.parse(raw) : {};
+  } catch (e) {
+    data = { error: raw || `Login failed (${res.status})` };
+  }
 
   if (!res.ok) {
     throw data;
