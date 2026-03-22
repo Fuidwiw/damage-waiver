@@ -19,6 +19,8 @@ body {
   background: #f3f3f3;
   padding: 10px 0;
   z-index: 10;
+  align-items: center;
+  flex-wrap: wrap;
 }
 
 button {
@@ -37,6 +39,18 @@ button {
 #resetBtn {
   background: #666;
   color: white;
+}
+
+#logoutBtn {
+  background: #b42318;
+  color: white;
+}
+
+#loginBtn {
+  width: 100%;
+  background: #1f6feb;
+  color: white;
+  margin-top: 16px;
 }
 
 .form-card {
@@ -86,6 +100,62 @@ textarea {
 
 .hidden {
   display: none !important;
+}
+
+.auth-shell {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 480px;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+  padding: 28px;
+}
+
+.auth-help-text {
+  margin: 0 0 18px;
+  line-height: 1.5;
+  color: #444;
+}
+
+.login-message {
+  min-height: 24px;
+  margin-top: 14px;
+  font-weight: 700;
+}
+
+.login-message.error {
+  color: #b42318;
+}
+
+.login-message.success {
+  color: #027a48;
+}
+
+.auth-status-block {
+  min-width: 220px;
+  flex: 1;
+  background: #fff;
+  border: 1px solid #d0d5dd;
+  border-radius: 10px;
+  padding: 10px 12px;
+  box-sizing: border-box;
+}
+
+#authStatusText {
+  font-weight: 700;
+}
+
+#sessionExpiryText {
+  margin-top: 4px;
+  font-size: 13px;
+  color: #555;
 }
 
 .job-number-banner {
@@ -216,7 +286,7 @@ textarea {
 }
 
 /* FORCE BLACK TEXT FIX + TOWBOOK BUTTON */
-.form-card, .form-card h1, .form-card h2, .form-card p, .form-card label, 
+.form-card, .form-card h1, .form-card h2, .form-card p, .form-card label,
 .form-card span, .job-banner-value, input, select, textarea {
     color: #222 !important;
 }

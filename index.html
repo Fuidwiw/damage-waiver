@@ -8,9 +8,32 @@
 </head>
 <body>
   <div class="page">
+  <div id="loginScreen" class="auth-shell hidden">
+    <div class="auth-card">
+      <h1>Damage Waiver Login</h1>
+      <p class="auth-help-text">
+        Enter your Towbook username. Access is granted only if that username is currently listed as an active Towbook user.
+      </p>
+
+      <form id="loginForm">
+        <label for="towbookUsername">Towbook Username</label>
+        <input type="text" id="towbookUsername" name="towbook_username" autocomplete="username" required />
+        <button id="loginBtn" type="submit">Log In</button>
+      </form>
+
+      <p id="loginMessage" class="login-message" aria-live="polite"></p>
+    </div>
+  </div>
+
+  <div id="appScreen" class="hidden">
     <div class="toolbar" data-html2canvas-ignore="true">
+      <div class="auth-status-block">
+        <div id="authStatusText">Not logged in</div>
+        <div id="sessionExpiryText"></div>
+      </div>
       <button id="saveBtn" type="button">Save as Image</button>
       <button id="resetBtn" type="button">Start Fresh</button>
+      <button id="logoutBtn" type="button">Log Out</button>
     </div>
 
     <form id="waiverForm">
@@ -414,6 +437,7 @@
         </div>
       </div>
     </form>
+  </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
