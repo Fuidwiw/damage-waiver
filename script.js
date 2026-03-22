@@ -325,6 +325,22 @@ resetBtn.addEventListener("click", () => {
   if (confirm("Start fresh?")) resetFormCompletely();
 });
 
+function showIphoneSaveInstructions() {
+  const isIphone = /iPhone/i.test(navigator.userAgent);
+  if (!isIphone) return;
+
+  alert(
+    "IMPORTANT FOR IPHONE USERS\n\n" +
+    "Your waiver was saved to Files/Downloads.\n\n" +
+    "To move it to Photos:\n" +
+    "1. Open the saved file\n" +
+    "2. Tap the Share icon\n" +
+    "3. Tap Save Image\n\n" +
+    "DO NOT screenshot the waiver.\n" +
+    "Screenshots can make the text unreadable."
+  );
+}
+
 saveBtn.addEventListener("click", async () => {
   if (!validateVisibleFields()) return;
 
@@ -347,6 +363,7 @@ saveBtn.addEventListener("click", async () => {
     await saveImageFromCanvas(canvas, `${job}_${date}.jpg`);
 
     alert("Image saved.");
+	showIphoneSaveInstructions();
     resetFormCompletely();
   } catch (err) {
     console.error(err);
