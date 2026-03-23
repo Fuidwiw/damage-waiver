@@ -534,14 +534,20 @@ function setupSignaturePad() {
 
   signatureCanvas.addEventListener("pointerdown", startDraw);
   signatureCanvas.addEventListener("pointermove", draw);
-  signatureCanvas.addEventListener("pointerup", endDraw);
+  window.addEventListener("pointerup", endDraw);
   signatureCanvas.addEventListener("pointerleave", endDraw);
+
+  signatureCanvas.addEventListener("touchstart", startDraw, { passive: false });
+  signatureCanvas.addEventListener("touchmove", draw, { passive: false });
+  window.addEventListener("touchend", endDraw, { passive: false });
 
   clearSignatureBtn.addEventListener("click", clearSignature);
   window.addEventListener("resize", handleCanvasResize);
 }
 
 function handleCanvasResize() {
+  if (appScreen.classList.contains("hidden")) return;
+
   const existing = signatureCanvas.toDataURL();
   resizeCanvas();
 
@@ -554,6 +560,14 @@ function handleCanvasResize() {
 
 function getPoint(e) {
   const rect = signatureCanvas.getBoundingClientRect();
+
+  if (e.touches && e.touches.length > 0) {
+    return {
+      x: e.touches[0].clientX - rect.left,
+      y: e.touches[0].clientY - rect.top
+    };
+  }
+
   return {
     x: e.clientX - rect.left,
     y: e.clientY - rect.top
@@ -577,7 +591,8 @@ function draw(e) {
   sigCtx.stroke();
 }
 
-function endDraw() {
+function endDraw(e) {
+  if (e) e.preventDefault();
   drawing = false;
 }
 
