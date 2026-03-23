@@ -537,10 +537,6 @@ function setupSignaturePad() {
   window.addEventListener("pointerup", endDraw);
   signatureCanvas.addEventListener("pointerleave", endDraw);
 
-  signatureCanvas.addEventListener("touchstart", startDraw, { passive: false });
-  signatureCanvas.addEventListener("touchmove", draw, { passive: false });
-  window.addEventListener("touchend", endDraw, { passive: false });
-
   clearSignatureBtn.addEventListener("click", clearSignature);
   window.addEventListener("resize", handleCanvasResize);
 }
@@ -591,8 +587,7 @@ function draw(e) {
   sigCtx.stroke();
 }
 
-function endDraw(e) {
-  if (e) e.preventDefault();
+function endDraw() {
   drawing = false;
 }
 
