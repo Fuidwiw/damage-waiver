@@ -1,4 +1,4 @@
-const API_URL = "https://api-test.ozarkroadside.com"
+const API_URL = "https://api.ozarkroadside.com"
 const loginScreen = document.getElementById("loginScreen");
 const appScreen = document.getElementById("appScreen");
 const loginForm = document.getElementById("loginForm");
@@ -85,6 +85,10 @@ function showAppScreen(username, expiresAt) {
   appScreen.classList.remove("hidden");
   authStatusText.textContent = `Logged in as: ${username}`;
   sessionExpiryText.textContent = `Session expires: ${formatDateTime(expiresAt)}`;
+  
+  setTimeout(() => {
+	  ensureSignaturePadReady();
+  }, 0);
 }
 
 async function checkAuthStatus() {
@@ -397,10 +401,7 @@ async function pullFromTowbook(jobNumber) {
   const res = await fetch(
     `${API_URL}/towbook-call?jobNumber=${encodeURIComponent(jobNumber)}`,
     {
-      credentials: "include",
-	  headers: {
-		  "x-api-key": "PlanetFitness8675309"
-	  }
+      credentials: "include"
     }
   );
 
@@ -533,7 +534,7 @@ function setupSignaturePad() {
 
   signatureCanvas.addEventListener("pointerdown", startDraw);
   signatureCanvas.addEventListener("pointermove", draw);
-  signatureCanvas.addEventListener("pointerup", endDraw);
+  window.addEventListener("pointerup", endDraw);
   signatureCanvas.addEventListener("pointerleave", endDraw);
 
   clearSignatureBtn.addEventListener("click", clearSignature);
@@ -541,6 +542,8 @@ function setupSignaturePad() {
 }
 
 function handleCanvasResize() {
+  if (appScreen.classList.contains("hidden")) return;
+
   const existing = signatureCanvas.toDataURL();
   resizeCanvas();
 
@@ -553,6 +556,14 @@ function handleCanvasResize() {
 
 function getPoint(e) {
   const rect = signatureCanvas.getBoundingClientRect();
+
+  if (e.touches && e.touches.length > 0) {
+    return {
+      x: e.touches[0].clientX - rect.left,
+      y: e.touches[0].clientY - rect.top
+    };
+  }
+
   return {
     x: e.clientX - rect.left,
     y: e.clientY - rect.top
@@ -560,6 +571,7 @@ function getPoint(e) {
 }
 
 function startDraw(e) {
+  e.preventDefault();
   drawing = true;
   hasSignature = true;
   const p = getPoint(e);
@@ -586,10 +598,19 @@ function clearSignature() {
 }
 
 // ==================== INIT ====================
+let signatureInitialized = false;
+
+function ensureSignaturePadReady() {
+	if (!signatureInitialized) {
+		setupSignaturePad();
+		signatureInitialized = true;
+	} else {
+		resizeCanvas();
+	}
+}
 
 window.addEventListener("load", async () => {
   updateSections();
-  setupSignaturePad();
   setTodayDate();
   updateJobNumberDisplay();
   updatePoDisplay("");
