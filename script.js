@@ -87,7 +87,7 @@ function showAppScreen(username, expiresAt) {
   sessionExpiryText.textContent = `Session expires: ${formatDateTime(expiresAt)}`;
   
   setTimeout(() => {
-	  resizeCanvas();
+	  ensureSignaturePadReady();
   }, 0);
 }
 
