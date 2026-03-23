@@ -397,7 +397,10 @@ async function pullFromTowbook(jobNumber) {
   const res = await fetch(
     `${API_URL}/towbook-call?jobNumber=${encodeURIComponent(jobNumber)}`,
     {
-      credentials: "include"
+      credentials: "include",
+	  headers: {
+		  "x-api-key": "PlanetFitness8675309"
+	  }
     }
   );
 
