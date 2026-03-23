@@ -364,6 +364,7 @@ function alertFail(field) {
 
 // ==================== SAVE IMAGE ====================
 
+
 async function saveImageFromCanvas(canvas, filename) {
   const blob = await new Promise(resolve => {
     canvas.toBlob(resolve, "image/jpeg", 0.98);
@@ -381,6 +382,35 @@ async function saveImageFromCanvas(canvas, filename) {
   link.click();
   link.remove();
   URL.revokeObjectURL(url);
+}
+
+function isAppleMobileDevice() {
+  const ua = navigator.userAgent || navigator.vendor || window.opera || "";
+  const platform = navigator.platform || "";
+  const maxTouchPoints = navigator.maxTouchPoints || 0;
+
+  const iOSDevice = /iPad|iPhone|iPod/.test(ua);
+  const iPadOS13Plus = platform === "MacIntel" && maxTouchPoints > 1;
+
+  return iOSDevice || iPadOS13Plus;
+}
+
+function showSavedImageInstructions(filename) {
+  if (isAppleMobileDevice()) {
+    alert(
+      `Image downloaded as ${filename}.\n\n` +
+      `On iPhone, it may save to your Downloads folder instead of Photos.\n\n` +
+      `To move it to your Photo Library:\n` +
+      `1. Open the Files app\n` +
+      `2. Tap Browse > Downloads\n` +
+      `3. Tap the image\n` +
+      `4. Tap the Share button\n` +
+      `5. Tap "Save Image"\n\n` +
+      `Then open Towbook and upload it from your Photos.`
+    );
+  } else {
+    alert("Image saved.");
+  }
 }
 
 // ==================== TOWBOOK ====================
@@ -499,9 +529,10 @@ saveBtn.addEventListener("click", async () => {
     const job = jobNumberInput.value.trim() || "NOJOB";
     const date = document.getElementById("serviceDate").value || new Date().toISOString().split("T")[0];
 
-    await saveImageFromCanvas(canvas, `${job}_${date}.jpg`);
+    const filename = `${job}_${date}.jpg`;
+	await saveImageFromCanvas(canvas, filename);
 
-    alert("Image saved.");
+	showSavedImageInstructions(filename);
     resetFormCompletely();
   } catch (err) {
     console.error(err);
