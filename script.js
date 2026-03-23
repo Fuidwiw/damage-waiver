@@ -561,6 +561,7 @@ function getPoint(e) {
 }
 
 function startDraw(e) {
+  e.preventDefault();
   drawing = true;
   hasSignature = true;
   const p = getPoint(e);
