@@ -1,4 +1,5 @@
 const API_URL = "https://api.ozarkdamageclaims.com";
+const API_KEY = "PlanetFitness8675309"
 const waiverForm = document.getElementById("waiverForm");
 const captureArea = document.getElementById("captureArea");
 const saveBtn = document.getElementById("saveBtn");
@@ -248,7 +249,10 @@ async function pullFromTowbook(jobNumber) {
   const res = await fetch(
     `${API_URL}/towbook-call?jobNumber=${encodeURIComponent(jobNumber)}`,
     {
-      credentials: "include"
+      credentials: "include",
+	  headers: {
+		  "x-api-key": API_KEY
+	  }
     }
   );
 
