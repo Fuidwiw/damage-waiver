@@ -85,6 +85,10 @@ function showAppScreen(username, expiresAt) {
   appScreen.classList.remove("hidden");
   authStatusText.textContent = `Logged in as: ${username}`;
   sessionExpiryText.textContent = `Session expires: ${formatDateTime(expiresAt)}`;
+  
+  setTimeout(() => {
+	  resizeCanvas();
+  }, 0);
 }
 
 async function checkAuthStatus() {
@@ -583,10 +587,19 @@ function clearSignature() {
 }
 
 // ==================== INIT ====================
+let signatureInitialized = false;
+
+function ensureSignaturePadReady() {
+	if (!signatureInitialized) {
+		setupSignaturePad();
+		signatureInitialized = true;
+	} else {
+		resizeCanvas();
+	}
+}
 
 window.addEventListener("load", async () => {
   updateSections();
-  setupSignaturePad();
   setTodayDate();
   updateJobNumberDisplay();
   updatePoDisplay("");
