@@ -1,4 +1,4 @@
-const API_URL = "https://api.ozarkroadside.com"
+const API_URL = "https://api-test.ozarkroadside.com"
 const loginScreen = document.getElementById("loginScreen");
 const appScreen = document.getElementById("appScreen");
 const loginForm = document.getElementById("loginForm");
