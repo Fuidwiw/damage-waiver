@@ -364,10 +364,52 @@ function alertFail(field) {
 
 // ==================== SAVE IMAGE ====================
 
+
 async function saveImageFromCanvas(canvas, filename) {
   const blob = await new Promise(resolve => {
     canvas.toBlob(resolve, "image/jpeg", 0.98);
   });
+
+function splitCanvasIntoTwo(sourceCanvas) {
+  const width = sourceCanvas.width;
+  const height = sourceCanvas.height;
+
+  const overlap = Math.floor(height * 0.08); // small overlap so text doesn't get cut
+  const halfHeight = Math.ceil(height / 2);
+
+  const topHeight = Math.min(height, halfHeight + overlap);
+  const bottomStartY = Math.max(0, halfHeight - overlap);
+  const bottomHeight = height - bottomStartY;
+
+  const topCanvas = document.createElement("canvas");
+  topCanvas.width = width;
+  topCanvas.height = topHeight;
+
+  const bottomCanvas = document.createElement("canvas");
+  bottomCanvas.width = width;
+  bottomCanvas.height = bottomHeight;
+
+  const topCtx = topCanvas.getContext("2d");
+  const bottomCtx = bottomCanvas.getContext("2d");
+
+  topCtx.fillStyle = "#fff";
+  topCtx.fillRect(0, 0, topCanvas.width, topCanvas.height);
+  topCtx.drawImage(
+    sourceCanvas,
+    0, 0, width, topHeight,
+    0, 0, width, topHeight
+  );
+
+  bottomCtx.fillStyle = "#fff";
+  bottomCtx.fillRect(0, 0, bottomCanvas.width, bottomCanvas.height);
+  bottomCtx.drawImage(
+    sourceCanvas,
+    0, bottomStartY, width, bottomHeight,
+    0, 0, width, bottomHeight
+  );
+
+  return [topCanvas, bottomCanvas];
+}
 
   if (!blob) {
     throw new Error("Could not create image file.");
@@ -381,6 +423,35 @@ async function saveImageFromCanvas(canvas, filename) {
   link.click();
   link.remove();
   URL.revokeObjectURL(url);
+}
+
+function isAppleMobileDevice() {
+  const ua = navigator.userAgent || navigator.vendor || window.opera || "";
+  const platform = navigator.platform || "";
+  const maxTouchPoints = navigator.maxTouchPoints || 0;
+
+  const iOSDevice = /iPad|iPhone|iPod/.test(ua);
+  const iPadOS13Plus = platform === "MacIntel" && maxTouchPoints > 1;
+
+  return iOSDevice || iPadOS13Plus;
+}
+
+function showSavedImageInstructions(fileLabel) {
+  if (isAppleMobileDevice()) {
+    alert(
+      `Images downloaded: ${fileLabel}.\n\n` +
+      `On iPhone, they may save to your Downloads folder instead of Photos.\n\n` +
+      `To move them to your Photo Library:\n` +
+      `1. Open the Files app\n` +
+      `2. Tap Browse > Downloads\n` +
+      `3. Open each image\n` +
+      `4. Tap the Share button\n` +
+      `5. Tap "Save Image"\n\n` +
+      `Then open Towbook and upload both photos.`
+    );
+  } else {
+    alert(`Images saved: ${fileLabel}`);
+  }
 }
 
 // ==================== TOWBOOK ====================
@@ -499,9 +570,16 @@ saveBtn.addEventListener("click", async () => {
     const job = jobNumberInput.value.trim() || "NOJOB";
     const date = document.getElementById("serviceDate").value || new Date().toISOString().split("T")[0];
 
-    await saveImageFromCanvas(canvas, `${job}_${date}.jpg`);
+    const filename = `${job}_${date}`;
+	const [topCanvas, bottomCanvas] =  splitCanvasIntoTwo(canvas);
+  
+	const file1 = `${filenameBase}_part1.jpg`;
+	const file2 = `${filenameBase}_part2.jpg`;
+	
+	await saveImageFromCanvas(topCanvas, file1);
+	await saveImageFromCanvas(bottomCanvas, file2);
 
-    alert("Image saved.");
+	showSavedImageInstructions(`${file1} and ${file2}`);
     resetFormCompletely();
   } catch (err) {
     console.error(err);
