@@ -364,17 +364,30 @@ function alertFail(field) {
 
 // ==================== SAVE IMAGE ====================
 
-
 async function saveImageFromCanvas(canvas, filename) {
   const blob = await new Promise(resolve => {
     canvas.toBlob(resolve, "image/jpeg", 0.98);
   });
 
+  if (!blob) {
+    throw new Error("Could not create image file.");
+  }
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.download = filename;
+  link.href = url;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
 function splitCanvasIntoTwo(sourceCanvas) {
   const width = sourceCanvas.width;
   const height = sourceCanvas.height;
 
-  const overlap = Math.floor(height * 0.08); // small overlap so text doesn't get cut
+  const overlap = Math.floor(height * 0.08);
   const halfHeight = Math.ceil(height / 2);
 
   const topHeight = Math.min(height, halfHeight + overlap);
@@ -409,20 +422,6 @@ function splitCanvasIntoTwo(sourceCanvas) {
   );
 
   return [topCanvas, bottomCanvas];
-}
-
-  if (!blob) {
-    throw new Error("Could not create image file.");
-  }
-
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.download = filename;
-  link.href = url;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  URL.revokeObjectURL(url);
 }
 
 function isAppleMobileDevice() {
@@ -568,14 +567,14 @@ saveBtn.addEventListener("click", async () => {
     });
 
     const job = jobNumberInput.value.trim() || "NOJOB";
-    const date = document.getElementById("serviceDate").value || new Date().toISOString().split("T")[0];
+	const date = document.getElementById("serviceDate").value || new Date().toISOString().split("T")[0];
 
-    const filename = `${job}_${date}`;
-	const [topCanvas, bottomCanvas] =  splitCanvasIntoTwo(canvas);
-  
+	const filenameBase = `${job}_${date}`;
+	const [topCanvas, bottomCanvas] = splitCanvasIntoTwo(canvas);
+
 	const file1 = `${filenameBase}_part1.jpg`;
 	const file2 = `${filenameBase}_part2.jpg`;
-	
+
 	await saveImageFromCanvas(topCanvas, file1);
 	await saveImageFromCanvas(bottomCanvas, file2);
 
