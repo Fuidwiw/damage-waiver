@@ -598,7 +598,7 @@ saveBtn.addEventListener("click", async () => {
   if (!validateVisibleFields()) return;
 
   saveBtn.disabled = true;
-  saveBtn.textContent = "Saving Part 1...";
+  saveBtn.textContent = "Saving...";
 
   try {
     updateJobNumberDisplay();
@@ -612,24 +612,32 @@ saveBtn.addEventListener("click", async () => {
 
     const job = jobNumberInput.value.trim() || "NOJOB";
     const date = document.getElementById("serviceDate").value || new Date().toISOString().split("T")[0];
-
     const filenameBase = `${job}_${date}`;
-    const [topCanvas, bottomCanvas] = splitCanvasIntoTwo(canvas);
 
-    const file1 = `${filenameBase}_part1.jpg`;
-    const file2 = `${filenameBase}_part2.jpg`;
+    if (jobType.value === "tire") {
+      const [topCanvas, bottomCanvas] = splitCanvasIntoTwo(canvas);
 
-    await saveImageFromCanvas(topCanvas, file1);
+      const file1 = `${filenameBase}_part1.jpg`;
+      const file2 = `${filenameBase}_part2.jpg`;
 
-    pendingSecondImage = {
-      canvas: bottomCanvas,
-      filename: file2,
-      firstFile: file1
-    };
+      await saveImageFromCanvas(topCanvas, file1);
 
-    alert(`Part 1 saved as ${file1}. Tap the button again to save Part 2.`);
-    saveBtn.disabled = false;
-    saveBtn.textContent = "Download Part 2";
+      pendingSecondImage = {
+        canvas: bottomCanvas,
+        filename: file2,
+        firstFile: file1
+      };
+
+      alert(`Part 1 saved as ${file1}. Tap the button again to save Part 2.`);
+      saveBtn.disabled = false;
+      saveBtn.textContent = "Download Part 2";
+      return;
+    }
+
+    const filename = `${filenameBase}.jpg`;
+    await saveImageFromCanvas(canvas, filename);
+    showSavedImageInstructions(filename);
+    resetFormCompletely();
   } catch (err) {
     console.error(err);
     alert("Save failed.");
