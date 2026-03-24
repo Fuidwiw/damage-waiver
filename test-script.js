@@ -57,6 +57,8 @@ let sigCtx;
 let drawing = false;
 let hasSignature = false;
 
+let pendingSecondImage = null;
+
 // ==================== AUTH ====================
 
 function setLoginMessage(message, type = "") {
@@ -85,9 +87,9 @@ function showAppScreen(username, expiresAt) {
   appScreen.classList.remove("hidden");
   authStatusText.textContent = `Logged in as: ${username}`;
   sessionExpiryText.textContent = `Session expires: ${formatDateTime(expiresAt)}`;
-  
+
   setTimeout(() => {
-	  ensureSignaturePadReady();
+    ensureSignaturePadReady();
   }, 0);
 }
 
@@ -243,6 +245,12 @@ function setTodayDate() {
 
 // ==================== RESET ====================
 
+function clearPendingSecondImage() {
+  pendingSecondImage = null;
+  saveBtn.textContent = "Save as Image";
+  saveBtn.disabled = false;
+}
+
 function resetFormCompletely() {
   waiverForm.reset();
   updateSections();
@@ -251,6 +259,7 @@ function resetFormCompletely() {
   updateJobNumberDisplay();
   updatePoDisplay("");
   updateDeclinedToSignState();
+  clearPendingSecondImage();
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
@@ -364,10 +373,14 @@ function alertFail(field) {
 
 // ==================== SAVE IMAGE ====================
 
-async function saveImageFromCanvas(canvas, filename) {
-  const blob = await new Promise(resolve => {
+async function canvasToBlob(canvas) {
+  return await new Promise(resolve => {
     canvas.toBlob(resolve, "image/jpeg", 0.98);
   });
+}
+
+async function saveImageFromCanvas(canvas, filename) {
+  const blob = await canvasToBlob(canvas);
 
   if (!blob) {
     throw new Error("Could not create image file.");
@@ -379,8 +392,11 @@ async function saveImageFromCanvas(canvas, filename) {
   link.href = url;
   document.body.appendChild(link);
   link.click();
-  link.remove();
-  URL.revokeObjectURL(url);
+  document.body.removeChild(link);
+
+  setTimeout(() => {
+    URL.revokeObjectURL(url);
+  }, 3000);
 }
 
 function splitCanvasIntoTwo(sourceCanvas) {
@@ -529,13 +545,22 @@ pullBtn.addEventListener("click", async () => {
 
 // ==================== EVENTS ====================
 
-jobType.addEventListener("change", updateSections);
+jobType.addEventListener("change", () => {
+  updateSections();
+  clearPendingSecondImage();
+});
+
 declinedToSignOverride.addEventListener("change", updateDeclinedToSignState);
-jobNumberInput.addEventListener("input", updateJobNumberDisplay);
+
+jobNumberInput.addEventListener("input", () => {
+  updateJobNumberDisplay();
+  clearPendingSecondImage();
+});
 
 jobNumberInput.addEventListener("change", async () => {
   const jobNum = jobNumberInput.value.trim();
   updateJobNumberDisplay();
+  clearPendingSecondImage();
 
   if (!jobNum) return;
 
@@ -551,10 +576,29 @@ resetBtn.addEventListener("click", () => {
 });
 
 saveBtn.addEventListener("click", async () => {
+  if (pendingSecondImage) {
+    saveBtn.disabled = true;
+    saveBtn.textContent = "Saving Part 2...";
+
+    try {
+      await saveImageFromCanvas(pendingSecondImage.canvas, pendingSecondImage.filename);
+      showSavedImageInstructions(`${pendingSecondImage.firstFile} and ${pendingSecondImage.filename}`);
+      pendingSecondImage = null;
+      resetFormCompletely();
+    } catch (err) {
+      console.error(err);
+      alert("Part 2 failed to save.");
+      saveBtn.disabled = false;
+      saveBtn.textContent = "Download Part 2";
+    }
+
+    return;
+  }
+
   if (!validateVisibleFields()) return;
 
   saveBtn.disabled = true;
-  saveBtn.textContent = "Saving...";
+  saveBtn.textContent = "Saving Part 1...";
 
   try {
     updateJobNumberDisplay();
@@ -567,26 +611,30 @@ saveBtn.addEventListener("click", async () => {
     });
 
     const job = jobNumberInput.value.trim() || "NOJOB";
-	const date = document.getElementById("serviceDate").value || new Date().toISOString().split("T")[0];
+    const date = document.getElementById("serviceDate").value || new Date().toISOString().split("T")[0];
 
-	const filenameBase = `${job}_${date}`;
-	const [topCanvas, bottomCanvas] = splitCanvasIntoTwo(canvas);
+    const filenameBase = `${job}_${date}`;
+    const [topCanvas, bottomCanvas] = splitCanvasIntoTwo(canvas);
 
-	const file1 = `${filenameBase}_part1.jpg`;
-	const file2 = `${filenameBase}_part2.jpg`;
+    const file1 = `${filenameBase}_part1.jpg`;
+    const file2 = `${filenameBase}_part2.jpg`;
 
-	await saveImageFromCanvas(topCanvas, file1);
-	await saveImageFromCanvas(bottomCanvas, file2);
+    await saveImageFromCanvas(topCanvas, file1);
 
-	showSavedImageInstructions(`${file1} and ${file2}`);
-    resetFormCompletely();
+    pendingSecondImage = {
+      canvas: bottomCanvas,
+      filename: file2,
+      firstFile: file1
+    };
+
+    alert(`Part 1 saved as ${file1}. Tap the button again to save Part 2.`);
+    saveBtn.disabled = false;
+    saveBtn.textContent = "Download Part 2";
   } catch (err) {
     console.error(err);
     alert("Save failed.");
+    clearPendingSecondImage();
   }
-
-  saveBtn.disabled = false;
-  saveBtn.textContent = "Save as Image";
 });
 
 // ==================== SIGNATURE ====================
@@ -678,12 +726,12 @@ function clearSignature() {
 let signatureInitialized = false;
 
 function ensureSignaturePadReady() {
-	if (!signatureInitialized) {
-		setupSignaturePad();
-		signatureInitialized = true;
-	} else {
-		resizeCanvas();
-	}
+  if (!signatureInitialized) {
+    setupSignaturePad();
+    signatureInitialized = true;
+  } else {
+    resizeCanvas();
+  }
 }
 
 window.addEventListener("load", async () => {
