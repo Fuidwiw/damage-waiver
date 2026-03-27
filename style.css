@@ -360,3 +360,11 @@ input[id$="Initials"] {
     font-size: 76px;
   }
 }
+
+textarea {
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  resize: vertical;
+  min-height: 96px;
+}
