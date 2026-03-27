@@ -1,4 +1,5 @@
 const API_URL = "https://api.ozarkroadside.com"
+const TOWBOOK_PULL_DISABLED = true; // temporary NAS protection switch
 const loginScreen = document.getElementById("loginScreen");
 const appScreen = document.getElementById("appScreen");
 const loginForm = document.getElementById("loginForm");
@@ -513,35 +514,44 @@ async function pullFromTowbook(jobNumber) {
 
 // ==================== BUTTON ====================
 
-pullBtn.addEventListener("click", async () => {
-  const jobNum = jobNumberInput.value.trim();
+if (pullBtn) {
+  if (TOWBOOK_PULL_DISABLED) {
+    pullBtn.disabled = true;
+    pullBtn.textContent = "Job Info Disabled";
+    pullBtn.title = "Temporary disable to reduce NAS load.";
+    pullBtn.style.background = "#666";
+  } else {
+    pullBtn.addEventListener("click", async () => {
+      const jobNum = jobNumberInput.value.trim();
 
-  if (!jobNum || jobNum.length < 3) {
-    alert("Please enter a valid Job Number first.");
-    return;
+      if (!jobNum || jobNum.length < 3) {
+        alert("Please enter a valid Job Number first.");
+        return;
+      }
+
+      const originalText = pullBtn.textContent;
+      pullBtn.disabled = true;
+      pullBtn.textContent = "Generating Job Info...";
+      pullBtn.style.background = "#666";
+
+      try {
+        await pullFromTowbook(jobNum);
+        alert("✅ Job info generated successfully!");
+      } catch (err) {
+        console.error(err);
+        if ((err.message || "").toLowerCase().includes("login required")) {
+          showLoginScreen();
+          setLoginMessage("Your session expired. Please log in again.", "error");
+        }
+        alert(err.message || "Could not connect to Towbook.");
+      } finally {
+        pullBtn.disabled = false;
+        pullBtn.textContent = originalText;
+        pullBtn.style.background = "#1f6feb";
+      }
+    });
   }
-
-  const originalText = pullBtn.textContent;
-  pullBtn.disabled = true;
-  pullBtn.textContent = "Generating Job Info...";
-  pullBtn.style.background = "#666";
-
-  try {
-    await pullFromTowbook(jobNum);
-    alert("✅ Job info generated successfully!");
-  } catch (err) {
-    console.error(err);
-    if ((err.message || "").toLowerCase().includes("login required")) {
-      showLoginScreen();
-      setLoginMessage("Your session expired. Please log in again.", "error");
-    }
-    alert(err.message || "Could not connect to Towbook.");
-  } finally {
-    pullBtn.disabled = false;
-    pullBtn.textContent = originalText;
-    pullBtn.style.background = "#1f6feb";
-  }
-});
+}
 
 // ==================== EVENTS ====================
 
@@ -562,7 +572,7 @@ jobNumberInput.addEventListener("change", async () => {
   updateJobNumberDisplay();
   clearPendingSecondImage();
 
-  if (!jobNum) return;
+  if (!jobNum || TOWBOOK_PULL_DISABLED) return;
 
   try {
     await pullFromTowbook(jobNum);
