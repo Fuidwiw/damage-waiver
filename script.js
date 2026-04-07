@@ -372,37 +372,37 @@ function alertFail(field) {
   return false;
 }
 
-// ==================== TIMESTAMP =====================
+// ==================== TIMESTAMP ====================
 
 function buildSaveTimestampText() {
-	const now = new Date();
-	return `Saved: ${now.toLocaleDateString()} ${now.toLocaleTimeString()}`;
+  const now = new Date();
+  return `Saved: ${now.toLocaleDateString()} ${now.toLocaleTimeString()}`;
 }
 
 function addCaptureTimestamp() {
-	const existing = document.getElementById("captureTimestampStamp");
-	if (existing) existing.remove();
-	
-	const stamp = document.createElement("div");
-	stamp.id = "captureTimestampStamp";
-	stamp.textContent = buildSaveTimestampText();
-	
-	stamp.style.marginTop = "18px";
-	stamp.style.paddingTop = "10px";
-	stamp.style.borderTop = "2px solid #d0d7de";
-	stamp.style.fontSize = "14px";
-	stamp.style.fontWeight = "700";
-	stamp.style.color = "#111";
-	stamp.style.textAlign = "right";
-	stamp.style.background = "#fff";
-	
-	captureArea.appendChild(stamp);
-	return stamp;
+  const existing = document.getElementById("captureTimestampStamp");
+  if (existing) existing.remove();
+
+  const stamp = document.createElement("div");
+  stamp.id = "captureTimestampStamp";
+  stamp.textContent = buildSaveTimestampText();
+
+  stamp.style.marginTop = "18px";
+  stamp.style.paddingTop = "10px";
+  stamp.style.borderTop = "2px solid #d0d7de";
+  stamp.style.fontSize = "14px";
+  stamp.style.fontWeight = "700";
+  stamp.style.color = "#111";
+  stamp.style.textAlign = "right";
+  stamp.style.background = "#fff";
+
+  captureArea.appendChild(stamp);
+  return stamp;
 }
 
 function removeCaptureTimestamp() {
-	const existing = document.getElementById("captureTimestampStamp");
-	if (existing) existing.remove();
+  const existing = document.getElementById("captureTimestampStamp");
+  if (existing) existing.remove();
 }
 
 // ==================== SAVE IMAGE ====================
@@ -642,13 +642,13 @@ saveBtn.addEventListener("click", async () => {
 
   saveBtn.disabled = true;
   saveBtn.textContent = "Saving...";
-  
+
   let stampElement = null;
 
   try {
     updateJobNumberDisplay();
-	
-	stampElement = addCaptureTimestamp();
+
+    stampElement = addCaptureTimestamp();
 
     const canvas = await html2canvas(captureArea, {
       scale: 4,
@@ -674,9 +674,9 @@ saveBtn.addEventListener("click", async () => {
         filename: file2,
         firstFile: file1
       };
-	  
-	  removeCaptureTimestamp();
-	  stampElement = null;
+
+      removeCaptureTimestamp();
+      stampElement = null;
 
       alert(`Part 1 saved as ${file1}. Tap the button again to save Part 2.`);
       saveBtn.disabled = false;
@@ -692,11 +692,11 @@ saveBtn.addEventListener("click", async () => {
     console.error(err);
     alert("Save failed.");
     clearPendingSecondImage();
-	} finally {
-		if (stampElement) {
-		removeCaptureTimestamp();
+  } finally {
+    if (stampElement) {
+      removeCaptureTimestamp();
+    }
   }
-}
 });
 
 // ==================== SIGNATURE ====================
