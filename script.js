@@ -376,7 +376,7 @@ function alertFail(field) {
 
 function buildSaveTimestampText() {
 	const now = new Date();
-	return `Saved: ${now.toLocaleDateString()} ${now.toLocaleTimeString()}`:
+	return `Saved: ${now.toLocaleDateString()} ${now.toLocaleTimeString()}`;
 }
 
 function addCaptureTimestamp() {
@@ -692,11 +692,11 @@ saveBtn.addEventListener("click", async () => {
     console.error(err);
     alert("Save failed.");
     clearPendingSecondImage();
-  } finally {
-	  if (stampelement) {
-		  removeCaptureTimestamp();
-	  }
+	} finally {
+		if (stampElement) {
+		removeCaptureTimestamp();
   }
+}
 });
 
 // ==================== SIGNATURE ====================
