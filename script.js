@@ -606,23 +606,25 @@ resetBtn.addEventListener("click", () => {
 
 saveBtn.addEventListener("click", async () => {
   if (pendingSecondImage) {
-    saveBtn.disabled = true;
-    saveBtn.textContent = "Saving Part 2...";
+  saveBtn.disabled = true;
+  saveBtn.textContent = "Uploading Part 2...";
 
-    try {
-      await saveImageFromCanvas(pendingSecondImage.canvas, pendingSecondImage.filename);
-      alert(result2.message || "Uploaded to Towbook.");
-      pendingSecondImage = null;
-      resetFormCompletely();
-    } catch (err) {
-      console.error(err);
-      alert("Part 2 failed to save.");
-      saveBtn.disabled = false;
-      saveBtn.textContent = "Download Part 2";
-    }
+  try {
+    const part2 = pendingSecondImage;
+    pendingSecondImage = null;
 
-    return;
+    const result2 = await saveImageFromCanvas(part2.canvas, part2.filename);
+    alert(result2.message || "Part 2 uploaded to Towbook.");
+    resetFormCompletely();
+  } catch (err) {
+    console.error(err);
+    alert(err.message || "Part 2 failed to upload.");
+    saveBtn.disabled = false;
+    saveBtn.textContent = "Upload Part 2";
   }
+
+  return;
+}
 
   if (!validateVisibleFields()) return;
 
