@@ -487,34 +487,6 @@ function splitCanvasIntoTwo(sourceCanvas) {
   return [topCanvas, bottomCanvas];
 }
 
-function isAppleMobileDevice() {
-  const ua = navigator.userAgent || navigator.vendor || window.opera || "";
-  const platform = navigator.platform || "";
-  const maxTouchPoints = navigator.maxTouchPoints || 0;
-
-  const iOSDevice = /iPad|iPhone|iPod/.test(ua);
-  const iPadOS13Plus = platform === "MacIntel" && maxTouchPoints > 1;
-
-  return iOSDevice || iPadOS13Plus;
-}
-
-function showSavedImageInstructions(fileLabel) {
-  if (isAppleMobileDevice()) {
-    alert(
-      `Images downloaded: ${fileLabel}.\n\n` +
-      `On iPhone, they may save to your Downloads folder instead of Photos.\n\n` +
-      `To move them to your Photo Library:\n` +
-      `1. Open the Files app\n` +
-      `2. Tap Browse > Downloads\n` +
-      `3. Open each image\n` +
-      `4. Tap the Share button\n` +
-      `5. Tap "Save Image"\n\n` +
-      `Then open Towbook and upload both photos.`
-    );
-  } else {
-    alert(`Images saved: ${fileLabel}`);
-  }
-}
 
 // ==================== TOWBOOK ====================
 
@@ -639,7 +611,7 @@ saveBtn.addEventListener("click", async () => {
 
     try {
       await saveImageFromCanvas(pendingSecondImage.canvas, pendingSecondImage.filename);
-      showSavedImageInstructions(`${pendingSecondImage.firstFile} and ${pendingSecondImage.filename}`);
+      alert(result2.message || "Uploaded to Towbook.");
       pendingSecondImage = null;
       resetFormCompletely();
     } catch (err) {
@@ -692,9 +664,9 @@ saveBtn.addEventListener("click", async () => {
       removeCaptureTimestamp();
       stampElement = null;
 
-      alert(`Part 1 saved as ${file1}. Tap the button again to save Part 2.`);
+      alert("Part 1 uploaded to Towbook. Tap the button again for Part 2.");
       saveBtn.disabled = false;
-      saveBtn.textContent = "Download Part 2";
+      saveBtn.textContent = "Upload Part 2";
       return;
     }
 
