@@ -1,5 +1,5 @@
 const API_URL = "https://api.ozarkroadside.com"
-const TOWBOOK_PULL_DISABLED = true; // temporary NAS protection switch
+const TOWBOOK_PULL_DISABLED = false; // temporary NAS protection switch
 const loginScreen = document.getElementById("loginScreen");
 const appScreen = document.getElementById("appScreen");
 const loginForm = document.getElementById("loginForm");
