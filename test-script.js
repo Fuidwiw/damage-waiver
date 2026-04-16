@@ -1,4 +1,5 @@
 const API_URL = "https://api-test.ozarkroadside.com"
+const TOWBOOK_PULL_DISABLED = false; // temporary NAS protection switch
 const loginScreen = document.getElementById("loginScreen");
 const appScreen = document.getElementById("appScreen");
 const loginForm = document.getElementById("loginForm");
@@ -371,6 +372,39 @@ function alertFail(field) {
   return false;
 }
 
+// ==================== TIMESTAMP ====================
+
+function buildSaveTimestampText() {
+  const now = new Date();
+  return `Saved: ${now.toLocaleDateString()} ${now.toLocaleTimeString()}`;
+}
+
+function addCaptureTimestamp() {
+  const existing = document.getElementById("captureTimestampStamp");
+  if (existing) existing.remove();
+
+  const stamp = document.createElement("div");
+  stamp.id = "captureTimestampStamp";
+  stamp.textContent = buildSaveTimestampText();
+
+  stamp.style.marginTop = "18px";
+  stamp.style.paddingTop = "10px";
+  stamp.style.borderTop = "2px solid #d0d7de";
+  stamp.style.fontSize = "14px";
+  stamp.style.fontWeight = "700";
+  stamp.style.color = "#111";
+  stamp.style.textAlign = "right";
+  stamp.style.background = "#fff";
+
+  captureArea.appendChild(stamp);
+  return stamp;
+}
+
+function removeCaptureTimestamp() {
+  const existing = document.getElementById("captureTimestampStamp");
+  if (existing) existing.remove();
+}
+
 // ==================== SAVE IMAGE ====================
 
 async function canvasToBlob(canvas) {
@@ -513,35 +547,44 @@ async function pullFromTowbook(jobNumber) {
 
 // ==================== BUTTON ====================
 
-pullBtn.addEventListener("click", async () => {
-  const jobNum = jobNumberInput.value.trim();
+if (pullBtn) {
+  if (TOWBOOK_PULL_DISABLED) {
+    pullBtn.disabled = true;
+    pullBtn.textContent = "Job Info Disabled";
+    pullBtn.title = "Temporary disable to reduce NAS load.";
+    pullBtn.style.background = "#666";
+  } else {
+    pullBtn.addEventListener("click", async () => {
+      const jobNum = jobNumberInput.value.trim();
 
-  if (!jobNum || jobNum.length < 3) {
-    alert("Please enter a valid Job Number first.");
-    return;
+      if (!jobNum || jobNum.length < 3) {
+        alert("Please enter a valid Job Number first.");
+        return;
+      }
+
+      const originalText = pullBtn.textContent;
+      pullBtn.disabled = true;
+      pullBtn.textContent = "Generating Job Info...";
+      pullBtn.style.background = "#666";
+
+      try {
+        await pullFromTowbook(jobNum);
+        alert("✅ Job info generated successfully!");
+      } catch (err) {
+        console.error(err);
+        if ((err.message || "").toLowerCase().includes("login required")) {
+          showLoginScreen();
+          setLoginMessage("Your session expired. Please log in again.", "error");
+        }
+        alert(err.message || "Could not connect to Towbook.");
+      } finally {
+        pullBtn.disabled = false;
+        pullBtn.textContent = originalText;
+        pullBtn.style.background = "#1f6feb";
+      }
+    });
   }
-
-  const originalText = pullBtn.textContent;
-  pullBtn.disabled = true;
-  pullBtn.textContent = "Generating Job Info...";
-  pullBtn.style.background = "#666";
-
-  try {
-    await pullFromTowbook(jobNum);
-    alert("✅ Job info generated successfully!");
-  } catch (err) {
-    console.error(err);
-    if ((err.message || "").toLowerCase().includes("login required")) {
-      showLoginScreen();
-      setLoginMessage("Your session expired. Please log in again.", "error");
-    }
-    alert(err.message || "Could not connect to Towbook.");
-  } finally {
-    pullBtn.disabled = false;
-    pullBtn.textContent = originalText;
-    pullBtn.style.background = "#1f6feb";
-  }
-});
+}
 
 // ==================== EVENTS ====================
 
@@ -562,7 +605,7 @@ jobNumberInput.addEventListener("change", async () => {
   updateJobNumberDisplay();
   clearPendingSecondImage();
 
-  if (!jobNum) return;
+  if (!jobNum || TOWBOOK_PULL_DISABLED) return;
 
   try {
     await pullFromTowbook(jobNum);
@@ -600,8 +643,12 @@ saveBtn.addEventListener("click", async () => {
   saveBtn.disabled = true;
   saveBtn.textContent = "Saving...";
 
+  let stampElement = null;
+
   try {
     updateJobNumberDisplay();
+
+    stampElement = addCaptureTimestamp();
 
     const canvas = await html2canvas(captureArea, {
       scale: 4,
@@ -628,6 +675,9 @@ saveBtn.addEventListener("click", async () => {
         firstFile: file1
       };
 
+      removeCaptureTimestamp();
+      stampElement = null;
+
       alert(`Part 1 saved as ${file1}. Tap the button again to save Part 2.`);
       saveBtn.disabled = false;
       saveBtn.textContent = "Download Part 2";
@@ -642,6 +692,10 @@ saveBtn.addEventListener("click", async () => {
     console.error(err);
     alert("Save failed.");
     clearPendingSecondImage();
+  } finally {
+    if (stampElement) {
+      removeCaptureTimestamp();
+    }
   }
 });
 
