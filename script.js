@@ -20,6 +20,7 @@ const jobNumberDisplay = document.getElementById("jobNumberDisplay");
 const poDisplay = document.getElementById("poDisplay");
 const pullBtn = document.getElementById("pullTowbookBtn");
 const jobType = document.getElementById("jobType");
+let currentTowbookCallId = "";
 
 const generalReleaseInitials = document.getElementById("generalReleaseInitials");
 const lockoutInitials = document.getElementById("lockoutInitials");
@@ -248,12 +249,13 @@ function setTodayDate() {
 
 function clearPendingSecondImage() {
   pendingSecondImage = null;
-  saveBtn.textContent = "Save as Image";
+  saveBtn.textContent = "Upload Form";
   saveBtn.disabled = false;
 }
 
 function resetFormCompletely() {
   waiverForm.reset();
+  currentTowbookCallId = "";
   updateSections();
   clearSignature();
   setTodayDate();
@@ -419,18 +421,29 @@ async function saveImageFromCanvas(canvas, filename) {
   if (!blob) {
     throw new Error("Could not create image file.");
   }
+  
+  if (!currentTowbookCallId) {
+    throw new Error("No Towbook call is loaded. Tap Generate Job Info first.");
+  }
 
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.download = filename;
-  link.href = url;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+  const formData = new FormData();
+	formData.append("file", blob, filename);
+	formData.append("job_number", jobNumberInput.value.trim());
+	formData.append("call_id", currentTowbookCallId);
 
-  setTimeout(() => {
-    URL.revokeObjectURL(url);
-  }, 3000);
+  const res = await fetch(`${API_URL}/upload-waiver`, {
+    method: "POST",
+    credentials: "include",
+    body: formData
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    throw new Error(data.error || data.message || "Upload failed.");
+  }
+
+  return data;
 }
 
 function splitCanvasIntoTwo(sourceCanvas) {
@@ -535,6 +548,7 @@ async function pullFromTowbook(jobNumber) {
   document.getElementById("phone").value = data.phone || "";
   document.getElementById("vehicle").value = data.vehicle || "";
   updatePoDisplay(data.po || "");
+  currentTowbookCallId = data.call_id || "";
 
   if (data.job_type) {
     const mapped = mapJobType(data.job_type);
@@ -685,8 +699,8 @@ saveBtn.addEventListener("click", async () => {
     }
 
     const filename = `${filenameBase}.jpg`;
-    await saveImageFromCanvas(canvas, filename);
-    showSavedImageInstructions(filename);
+    const result = await saveImageFromCanvas(canvas, filename);
+    alert(result.message || "Live upload received.");
     resetFormCompletely();
   } catch (err) {
     console.error(err);
