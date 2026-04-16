@@ -675,7 +675,7 @@ saveBtn.addEventListener("click", async () => {
     const date = document.getElementById("serviceDate").value || new Date().toISOString().split("T")[0];
     const filenameBase = `${job}_${date}`;
 
-    if (jobType.value === "tire") {
+    if (true) {
       const [topCanvas, bottomCanvas] = splitCanvasIntoTwo(canvas);
 
       const file1 = `${filenameBase}_part1.jpg`;
