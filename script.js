@@ -618,21 +618,12 @@ saveBtn.addEventListener("click", async () => {
     stampElement = addCaptureTimestamp();
 
     const canvas = await html2canvas(captureArea, {
-      scale: 2,
+      scale: 3,
       useCORS: true,
       backgroundColor: "#fff",
-      windowWidth: 1200,
-      width: 1200,
-      onclone: clonedDoc => {
-        const clonedCaptureArea = clonedDoc.getElementById("captureArea");
-        if (clonedCaptureArea) {
-          clonedCaptureArea.style.width = "1200px";
-          clonedCaptureArea.style.maxWidth = "1200px";
-          clonedCaptureArea.style.margin = "0 auto";
-          clonedCaptureArea.style.background = "#fff";
-        }
-      }
-    });
+      windowWidth: documen.documentElement.scrollWidth
+	});
+
 
     const job = jobNumberInput.value.trim() || "NOJOB";
     const date =
