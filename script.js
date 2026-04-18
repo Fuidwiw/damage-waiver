@@ -637,6 +637,9 @@ saveBtn.addEventListener("click", async () => {
 
 	saveBtn.textContent = "Uploading Part 1...";
 	const result1 = await saveImageFromCanvas(topCanvas, file1);
+	
+	saveBtn.textContent = "Waiting before Part 2...";
+	await new Promise(resolve => setTimeout(resolve, 5000));
 
 	saveBtn.textContent = "Uploading Part 2...";
 	const result2 = await saveImageFromCanvas(bottomCanvas, file2);
