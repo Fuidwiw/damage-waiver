@@ -605,27 +605,7 @@ resetBtn.addEventListener("click", () => {
 });
 
 saveBtn.addEventListener("click", async () => {
-  if (pendingSecondImage) {
-  saveBtn.disabled = true;
-  saveBtn.textContent = "Uploading Part 2...";
-
-  try {
-    const part2 = pendingSecondImage;
-    pendingSecondImage = null;
-
-    const result2 = await saveImageFromCanvas(part2.canvas, part2.filename);
-    alert(result2.message || "Part 2 uploaded to Towbook.");
-    resetFormCompletely();
-  } catch (err) {
-    console.error(err);
-    alert(err.message || "Part 2 failed to upload.");
-    saveBtn.disabled = false;
-    saveBtn.textContent = "Upload Part 2";
-  }
-
-  return;
-}
-
+  
   if (!validateVisibleFields()) return;
 
   saveBtn.disabled = true;
@@ -649,28 +629,25 @@ saveBtn.addEventListener("click", async () => {
     const date = document.getElementById("serviceDate").value || new Date().toISOString().split("T")[0];
     const filenameBase = `${job}_${date}`;
 
-    if (true) {
-      const [topCanvas, bottomCanvas] = splitCanvasIntoTwo(canvas);
+  if (true) {
+	const [topCanvas, bottomCanvas] = splitCanvasIntoTwo(canvas);
 
-      const file1 = `${filenameBase}_part1.jpg`;
-      const file2 = `${filenameBase}_part2.jpg`;
+	const file1 = `${filenameBase}_part1.jpg`;
+	const file2 = `${filenameBase}_part2.jpg`;
 
-      await saveImageFromCanvas(topCanvas, file1);
+	saveBtn.textContent = "Uploading Part 1...";
+	const result1 = await saveImageFromCanvas(topCanvas, file1);
 
-      pendingSecondImage = {
-        canvas: bottomCanvas,
-        filename: file2,
-        firstFile: file1
-      };
+	saveBtn.textContent = "Uploading Part 2...";
+	const result2 = await saveImageFromCanvas(bottomCanvas, file2);
 
-      removeCaptureTimestamp();
-      stampElement = null;
+	removeCaptureTimestamp();
+	stampElement = null;
 
-      alert("Part 1 uploaded to Towbook. Tap the button again for Part 2.");
-      saveBtn.disabled = false;
-      saveBtn.textContent = "Upload Part 2";
-      return;
-    }
+	alert(result2.message || "Both parts uploaded to Towbook.");
+	resetFormCompletely();
+	return;
+}
 
     const filename = `${filenameBase}.jpg`;
     const result = await saveImageFromCanvas(canvas, filename);
