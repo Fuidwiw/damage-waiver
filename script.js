@@ -655,7 +655,7 @@ saveBtn.addEventListener("click", async () => {
     resetFormCompletely();
   } catch (err) {
     console.error(err);
-    alert("Save failed.");
+    alert(err.message || "Save failed.");
     clearPendingSecondImage();
   } finally {
     if (stampElement) {
