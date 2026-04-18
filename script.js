@@ -621,7 +621,7 @@ saveBtn.addEventListener("click", async () => {
       scale: 2,
       useCORS: true,
       backgroundColor: "#fff",
-      windowWidth: documen.documentElement.scrollWidth
+      windowWidth: document.documentElement.scrollWidth
 	});
 
 
