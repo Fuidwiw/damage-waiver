@@ -411,7 +411,7 @@ function removeCaptureTimestamp() {
 
 async function canvasToBlob(canvas) {
   return await new Promise(resolve => {
-    canvas.toBlob(resolve, "image/jpeg", 0.98);
+    canvas.toBlob(resolve, "image/jpeg", 0.85);
   });
 }
 
@@ -618,7 +618,7 @@ saveBtn.addEventListener("click", async () => {
     stampElement = addCaptureTimestamp();
 
     const canvas = await html2canvas(captureArea, {
-      scale: 3,
+      scale: 2,
       useCORS: true,
       backgroundColor: "#fff",
       windowWidth: documen.documentElement.scrollWidth
