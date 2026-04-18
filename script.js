@@ -617,11 +617,22 @@ saveBtn.addEventListener("click", async () => {
 
     stampElement = addCaptureTimestamp();
 
-    const canvas = await html2canvas(captureArea, {
-      scale: 2,
-      useCORS: true,
-      backgroundColor: "#fff",
-      windowWidth: document.documentElement.scrollWidth
+	const canvas = await html2canvas(captureArea, {
+		scale: 2,
+		useCORS: true,
+		backgroundColor: "#fff",
+		windowWidth: 900,
+		onclone: clonedDoc => {
+			const clonedCaptureArea = clonedDoc.getElementById("captureArea");
+			if (clonedCaptureArea) {
+				clonedCaptureArea.style.width = "900px";
+				clonedCaptureArea.style.maxWidth = "900px";
+				clonedCaptureArea.style.margin = "0 auto";
+				clonedCaptureArea.style.background = "#fff";
+				clonedCaptureArea.style.padding = "24px";
+				clonedCaptureArea.style.boxSizing = "border-box";
+			}
+		}
 	});
 
 
