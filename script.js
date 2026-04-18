@@ -605,7 +605,6 @@ resetBtn.addEventListener("click", () => {
 });
 
 saveBtn.addEventListener("click", async () => {
-  
   if (!validateVisibleFields()) return;
 
   saveBtn.disabled = true;
@@ -619,42 +618,46 @@ saveBtn.addEventListener("click", async () => {
     stampElement = addCaptureTimestamp();
 
     const canvas = await html2canvas(captureArea, {
-      scale: 4,
+      scale: 2,
       useCORS: true,
       backgroundColor: "#fff",
-      windowWidth: document.documentElement.scrollWidth
+      windowWidth: 1200,
+      width: 1200,
+      onclone: clonedDoc => {
+        const clonedCaptureArea = clonedDoc.getElementById("captureArea");
+        if (clonedCaptureArea) {
+          clonedCaptureArea.style.width = "1200px";
+          clonedCaptureArea.style.maxWidth = "1200px";
+          clonedCaptureArea.style.margin = "0 auto";
+          clonedCaptureArea.style.background = "#fff";
+        }
+      }
     });
 
     const job = jobNumberInput.value.trim() || "NOJOB";
-    const date = document.getElementById("serviceDate").value || new Date().toISOString().split("T")[0];
+    const date =
+      document.getElementById("serviceDate").value ||
+      new Date().toISOString().split("T")[0];
     const filenameBase = `${job}_${date}`;
 
-  if (true) {
-	const [topCanvas, bottomCanvas] = splitCanvasIntoTwo(canvas);
+    const [topCanvas, bottomCanvas] = splitCanvasIntoTwo(canvas);
 
-	const file1 = `${filenameBase}_part1.jpg`;
-	const file2 = `${filenameBase}_part2.jpg`;
+    const file1 = `${filenameBase}_part1.jpg`;
+    const file2 = `${filenameBase}_part2.jpg`;
 
-	saveBtn.textContent = "Uploading Part 1...";
-	const result1 = await saveImageFromCanvas(topCanvas, file1);
-	
-	saveBtn.textContent = "Waiting before Part 2...";
-	await new Promise(resolve => setTimeout(resolve, 5000));
+    saveBtn.textContent = "Uploading Part 1...";
+    await saveImageFromCanvas(topCanvas, file1);
 
-	saveBtn.textContent = "Uploading Part 2...";
-	const result2 = await saveImageFromCanvas(bottomCanvas, file2);
+    saveBtn.textContent = "Waiting before Part 2...";
+    await new Promise(resolve => setTimeout(resolve, 5000));
 
-	removeCaptureTimestamp();
-	stampElement = null;
+    saveBtn.textContent = "Uploading Part 2...";
+    const result2 = await saveImageFromCanvas(bottomCanvas, file2);
 
-	alert(result2.message || "Both parts uploaded to Towbook.");
-	resetFormCompletely();
-	return;
-}
+    removeCaptureTimestamp();
+    stampElement = null;
 
-    const filename = `${filenameBase}.jpg`;
-    const result = await saveImageFromCanvas(canvas, filename);
-    alert(result.message || "Live upload received.");
+    alert(result2.message || "Both parts uploaded to Towbook.");
     resetFormCompletely();
   } catch (err) {
     console.error(err);
