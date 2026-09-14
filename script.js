@@ -51,6 +51,7 @@ const declinedToSignOverride = document.getElementById("declinedToSignOverride")
 const declinedSignMarker = document.getElementById("declinedSignMarker");
 const verificationSection = document.getElementById("verificationSection");
 const idVerifiedCheckbox = document.getElementById("idVerified");
+const customerIdPhotoInput = document.getElementById("customerIdPhoto");
 
 const signatureCanvas = document.getElementById("signaturePad");
 const clearSignatureBtn = document.getElementById("clearSignatureBtn");
@@ -287,12 +288,16 @@ function updateDeclinedToSignState() {
 
     if (verificationSection) verificationSection.classList.add("hidden");
     if (idVerifiedCheckbox) idVerifiedCheckbox.required = false;
+
+    // Customer ID photo is still required even when the customer declines to sign.
+    if (customerIdPhotoInput) customerIdPhotoInput.required = true;
   } else {
     notesField.placeholder = "Optional notes about the service...";
     signatureCanvas.classList.remove("signature-optional");
 
     if (verificationSection) verificationSection.classList.remove("hidden");
     if (idVerifiedCheckbox) idVerifiedCheckbox.required = true;
+    if (customerIdPhotoInput) customerIdPhotoInput.required = true;
   }
 }
 
@@ -338,6 +343,20 @@ function validateVisibleFields() {
     return false;
   }
 
+  if (!declinedToSignOverride.checked) {
+    if (!idVerifiedCheckbox || !idVerifiedCheckbox.checked) {
+      alert("Driver must verify the customer's ID before submitting the waiver.");
+      if (idVerifiedCheckbox) idVerifiedCheckbox.focus();
+      return false;
+    }
+  }
+
+  if (!customerIdPhotoInput || !customerIdPhotoInput.files || customerIdPhotoInput.files.length === 0) {
+    alert("Customer ID photo is required before submitting the waiver.");
+    if (customerIdPhotoInput) customerIdPhotoInput.focus();
+    return false;
+  }
+
   for (const field of getVisibleRequiredFields()) {
     if (field === notesField && declinedToSignOverride.checked && !field.value.trim()) {
       alert("Additional Notes are required when the customer declines to sign.");
@@ -351,6 +370,8 @@ function validateVisibleFields() {
       if (!oneChecked) return alertFail(field);
     } else if (field.type === "checkbox") {
       if (!field.checked) return alertFail(field);
+    } else if (field.type === "file") {
+      if (!field.files || field.files.length === 0) return alertFail(field);
     } else if (!field.value.trim()) {
       return alertFail(field);
     }
@@ -421,15 +442,61 @@ async function saveImageFromCanvas(canvas, filename) {
   if (!blob) {
     throw new Error("Could not create image file.");
   }
-  
+
   if (!currentTowbookCallId) {
     throw new Error("No Towbook call is loaded. Tap Generate Job Info first.");
   }
 
   const formData = new FormData();
-	formData.append("file", blob, filename);
-	formData.append("job_number", jobNumberInput.value.trim());
-	formData.append("call_id", currentTowbookCallId);
+  formData.append("file", blob, filename);
+  formData.append("job_number", jobNumberInput.value.trim());
+  formData.append("call_id", currentTowbookCallId);
+
+  const res = await fetch(`${API_URL}/upload-waiver`, {
+    method: "POST",
+    credentials: "include",
+    body: formData
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    throw new Error(data.error || data.message || "Upload failed.");
+  }
+
+  return data;
+}
+
+function getUploadFileExtension(file) {
+  const name = (file && file.name ? file.name : "").toLowerCase();
+  const match = name.match(/\.[a-z0-9]{2,5}$/);
+
+  if (match) return match[0];
+
+  const type = file && file.type ? file.type.toLowerCase() : "";
+
+  if (type.includes("png")) return ".png";
+  if (type.includes("webp")) return ".webp";
+  if (type.includes("gif")) return ".gif";
+  if (type.includes("heic")) return ".heic";
+  if (type.includes("heif")) return ".heif";
+
+  return ".jpg";
+}
+
+async function uploadFileToTowbook(file, filename) {
+  if (!file) {
+    throw new Error("Missing file to upload.");
+  }
+
+  if (!currentTowbookCallId) {
+    throw new Error("No Towbook call is loaded. Tap Generate Job Info first.");
+  }
+
+  const formData = new FormData();
+  formData.append("file", file, filename);
+  formData.append("job_number", jobNumberInput.value.trim());
+  formData.append("call_id", currentTowbookCallId);
 
   const res = await fetch(`${API_URL}/upload-waiver`, {
     method: "POST",
@@ -486,7 +553,6 @@ function splitCanvasIntoTwo(sourceCanvas) {
 
   return [topCanvas, bottomCanvas];
 }
-
 
 // ==================== TOWBOOK ====================
 
@@ -617,24 +683,23 @@ saveBtn.addEventListener("click", async () => {
 
     stampElement = addCaptureTimestamp();
 
-	const canvas = await html2canvas(captureArea, {
-		scale: 2,
-		useCORS: true,
-		backgroundColor: "#fff",
-		windowWidth: 900,
-		onclone: clonedDoc => {
-			const clonedCaptureArea = clonedDoc.getElementById("captureArea");
-			if (clonedCaptureArea) {
-				clonedCaptureArea.style.width = "900px";
-				clonedCaptureArea.style.maxWidth = "900px";
-				clonedCaptureArea.style.margin = "0 auto";
-				clonedCaptureArea.style.background = "#fff";
-				clonedCaptureArea.style.padding = "24px";
-				clonedCaptureArea.style.boxSizing = "border-box";
-			}
-		}
-	});
-
+    const canvas = await html2canvas(captureArea, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: "#fff",
+      windowWidth: 900,
+      onclone: clonedDoc => {
+        const clonedCaptureArea = clonedDoc.getElementById("captureArea");
+        if (clonedCaptureArea) {
+          clonedCaptureArea.style.width = "900px";
+          clonedCaptureArea.style.maxWidth = "900px";
+          clonedCaptureArea.style.margin = "0 auto";
+          clonedCaptureArea.style.background = "#fff";
+          clonedCaptureArea.style.padding = "24px";
+          clonedCaptureArea.style.boxSizing = "border-box";
+        }
+      }
+    });
 
     const job = jobNumberInput.value.trim() || "NOJOB";
     const date =
@@ -646,6 +711,18 @@ saveBtn.addEventListener("click", async () => {
 
     const file1 = `${filenameBase}_part1.jpg`;
     const file2 = `${filenameBase}_part2.jpg`;
+
+    const customerIdFile = customerIdPhotoInput && customerIdPhotoInput.files
+      ? customerIdPhotoInput.files[0]
+      : null;
+
+    if (!customerIdFile) {
+      throw new Error("Customer ID photo is required before submitting the waiver.");
+    }
+
+    saveBtn.textContent = "Uploading Customer ID Photo...";
+    const idPhotoFilename = `${filenameBase}_customer_id${getUploadFileExtension(customerIdFile)}`;
+    await uploadFileToTowbook(customerIdFile, idPhotoFilename);
 
     saveBtn.textContent = "Uploading Part 1...";
     await saveImageFromCanvas(topCanvas, file1);
@@ -659,7 +736,7 @@ saveBtn.addEventListener("click", async () => {
     removeCaptureTimestamp();
     stampElement = null;
 
-    alert(result2.message || "Both parts uploaded to Towbook.");
+    alert(result2.message || "Customer ID photo and both waiver parts uploaded to Towbook.");
     resetFormCompletely();
   } catch (err) {
     console.error(err);
@@ -758,6 +835,7 @@ function clearSignature() {
 }
 
 // ==================== INIT ====================
+
 let signatureInitialized = false;
 
 function ensureSignaturePadReady() {

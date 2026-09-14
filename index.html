@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Damage Waiver</title>
-  <link rel="stylesheet" href="style.css?v=1.01" />
+  <link rel="stylesheet" href="style.css?v=1.02" />
 </head>
 <body>
   <div class="page">
@@ -436,6 +436,20 @@
 					<input type="checkbox" id="idVerified" name="id_verified" required />
 					Driver verified the signer is the customer or authorized owner/operator by viewing their ID.
 				</label>
+				
+				<div class="id-photo-section" data-html2canvas-ignore="true">
+				  <label for="customerIdPhoto">Customer ID Photo Required</label>
+				  <input
+					type="file"
+					id="customerIdPhoto"
+					name="customer_id_photo"
+					accept="image/*"
+					capture="environment"
+				  />
+				  <p class="id-photo-help">
+					Required when verifying customer ID. This photo is uploaded directly to the Towbook call and is not saved in this waiver app.
+				  </p>
+				</div>
 
 				<label>Customer Signature</label>
 				<canvas id="signaturePad" class="signature-pad"></canvas>
@@ -451,6 +465,6 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-  <script src="script.js?v=2.33"></script>
+  <script src="script.js?v=2.34"></script>
 </body>
 </html>
