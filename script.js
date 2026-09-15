@@ -1,5 +1,6 @@
-const API_URL = "https://api.ozarkroadside.com"
-const TOWBOOK_PULL_DISABLED = false; // temporary NAS protection switch
+const API_URL = "https://api.ozarkroadside.com";
+const TOWBOOK_PULL_DISABLED = false;
+
 const loginScreen = document.getElementById("loginScreen");
 const appScreen = document.getElementById("appScreen");
 const loginForm = document.getElementById("loginForm");
@@ -20,6 +21,7 @@ const jobNumberDisplay = document.getElementById("jobNumberDisplay");
 const poDisplay = document.getElementById("poDisplay");
 const pullBtn = document.getElementById("pullTowbookBtn");
 const jobType = document.getElementById("jobType");
+
 let currentTowbookCallId = "";
 
 const generalReleaseInitials = document.getElementById("generalReleaseInitials");
@@ -60,7 +62,27 @@ let sigCtx;
 let drawing = false;
 let hasSignature = false;
 
-let pendingSecondImage = null;
+/*
+ * Upload package stays in browser memory while the page remains open.
+ *
+ * If:
+ *   ID succeeds
+ *   Part 1 succeeds
+ *   Part 2 fails
+ *
+ * pressing Upload Form again retries ONLY Part 2.
+ *
+ * The ID photo is never stored in localStorage/sessionStorage.
+ */
+let pendingUploadPackage = null;
+
+function newUploadProgress() {
+  return {
+    idUploaded: false,
+    part1Uploaded: false,
+    part2Uploaded: false
+  };
+}
 
 // ==================== AUTH ====================
 
@@ -71,6 +93,7 @@ function setLoginMessage(message, type = "") {
 
 function formatDateTime(value) {
   if (!value) return "";
+
   try {
     return new Date(value).toLocaleString();
   } catch (e) {
@@ -88,8 +111,10 @@ function showLoginScreen() {
 function showAppScreen(username, expiresAt) {
   loginScreen.classList.add("hidden");
   appScreen.classList.remove("hidden");
+
   authStatusText.textContent = `Logged in as: ${username}`;
-  sessionExpiryText.textContent = `Session expires: ${formatDateTime(expiresAt)}`;
+  sessionExpiryText.textContent =
+    `Session expires: ${formatDateTime(expiresAt)}`;
 
   setTimeout(() => {
     ensureSignaturePadReady();
@@ -108,6 +133,7 @@ async function checkAuthStatus() {
     }
 
     const data = await res.json();
+
     if (data.authenticated) {
       showAppScreen(data.username, data.expires_at);
     } else {
@@ -115,8 +141,9 @@ async function checkAuthStatus() {
     }
   } catch (err) {
     console.error(err);
+
     showLoginScreen();
-    setLoginMessage("Could not reach the local backend.", "error");
+    setLoginMessage("Could not reach the backend.", "error");
   }
 }
 
@@ -136,7 +163,9 @@ async function loginTowbookUser(username) {
   try {
     data = raw ? JSON.parse(raw) : {};
   } catch (e) {
-    data = { error: raw || `Login failed (${res.status})` };
+    data = {
+      error: raw || `Login failed (${res.status})`
+    };
   }
 
   if (!res.ok) {
@@ -157,6 +186,7 @@ loginForm.addEventListener("submit", async e => {
   e.preventDefault();
 
   const username = usernameInput.value.trim();
+
   if (!username) {
     setLoginMessage("Please enter your Towbook username.", "error");
     usernameInput.focus();
@@ -169,6 +199,7 @@ loginForm.addEventListener("submit", async e => {
 
   try {
     const data = await loginTowbookUser(username);
+
     showAppScreen(data.username, data.expires_at);
     setLoginMessage("");
     usernameInput.value = "";
@@ -186,7 +217,10 @@ loginForm.addEventListener("submit", async e => {
         "error"
       );
     } else {
-      setLoginMessage(err.error || "Login failed.", "error");
+      setLoginMessage(
+        err.error || "Login failed.",
+        "error"
+      );
     }
   } finally {
     loginBtn.disabled = false;
@@ -201,103 +235,222 @@ logoutBtn.addEventListener("click", async () => {
     console.error(err);
   }
 
+  clearPendingUpload();
+
   showLoginScreen();
-  setLoginMessage("You have been logged out.", "success");
+  setLoginMessage(
+    "You have been logged out.",
+    "success"
+  );
 });
 
 // ==================== DISPLAY HELPERS ====================
 
 function updateJobNumberDisplay() {
   const value = jobNumberInput.value.trim();
-  jobNumberDisplay.textContent = value || "ENTER JOB NUMBER";
+
+  jobNumberDisplay.textContent =
+    value || "ENTER JOB NUMBER";
 }
 
 function updatePoDisplay(value = "") {
-  poDisplay.textContent = value || "NOT LOADED";
+  poDisplay.textContent =
+    value || "NOT LOADED";
 }
 
 // ==================== SECTION CONTROL ====================
 
 function updateSections() {
   Object.values(sections).forEach(section => {
-    if (section) section.classList.add("hidden");
+    if (section) {
+      section.classList.add("hidden");
+    }
   });
 
   const selected = jobType.value;
+
   if (sections[selected]) {
     sections[selected].classList.remove("hidden");
   }
 
-  const mileageInput = document.getElementById("mileage");
-  mileageInput.required = selected === "tire";
+  const mileageInput =
+    document.getElementById("mileage");
 
-  if (lockoutInitials) lockoutInitials.required = selected === "lockout";
-  if (tireInitials) tireInitials.required = selected === "tire";
-  if (fuelInitials) fuelInitials.required = selected === "fuel";
-  if (jumpInitials) jumpInitials.required = selected === "jump";
-  if (outOfScopeInitials) outOfScopeInitials.required = selected === "outofscope";
+  mileageInput.required =
+    selected === "tire";
+
+  if (lockoutInitials) {
+    lockoutInitials.required =
+      selected === "lockout";
+  }
+
+  if (tireInitials) {
+    tireInitials.required =
+      selected === "tire";
+  }
+
+  if (fuelInitials) {
+    fuelInitials.required =
+      selected === "fuel";
+  }
+
+  if (jumpInitials) {
+    jumpInitials.required =
+      selected === "jump";
+  }
+
+  if (outOfScopeInitials) {
+    outOfScopeInitials.required =
+      selected === "outofscope";
+  }
 }
 
 // ==================== DATE ====================
 
 function setTodayDate() {
-  const today = new Date().toISOString().split("T")[0];
-  document.getElementById("serviceDate").value = today;
-  document.getElementById("finalInspectionDate").value = today;
+  const today =
+    new Date().toISOString().split("T")[0];
+
+  document.getElementById("serviceDate").value =
+    today;
+
+  document.getElementById("finalInspectionDate").value =
+    today;
+}
+
+// ==================== UPLOAD STATE ====================
+
+function clearPendingUpload() {
+  pendingUploadPackage = null;
+
+  saveBtn.disabled = false;
+  saveBtn.textContent = "Upload Form";
+}
+
+function updateRetryButton() {
+  saveBtn.disabled = false;
+
+  if (!pendingUploadPackage) {
+    saveBtn.textContent = "Upload Form";
+    return;
+  }
+
+  const progress =
+    pendingUploadPackage.progress;
+
+  if (!progress.idUploaded) {
+    saveBtn.textContent =
+      "Retry Customer ID Upload";
+    return;
+  }
+
+  if (!progress.part1Uploaded) {
+    saveBtn.textContent =
+      "Retry Waiver Part 1";
+    return;
+  }
+
+  if (!progress.part2Uploaded) {
+    saveBtn.textContent =
+      "Retry Waiver Part 2";
+    return;
+  }
+
+  saveBtn.textContent = "Upload Form";
 }
 
 // ==================== RESET ====================
 
-function clearPendingSecondImage() {
-  pendingSecondImage = null;
-  saveBtn.textContent = "Upload Form";
-  saveBtn.disabled = false;
-}
-
 function resetFormCompletely() {
   waiverForm.reset();
+
   currentTowbookCallId = "";
+
+  clearPendingUpload();
+
   updateSections();
   clearSignature();
   setTodayDate();
   updateJobNumberDisplay();
   updatePoDisplay("");
   updateDeclinedToSignState();
-  clearPendingSecondImage();
-  window.scrollTo({ top: 0, behavior: "smooth" });
+
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth"
+  });
 }
 
 // ==================== VALIDATION ====================
 
 function getVisibleRequiredFields() {
-  return Array.from(waiverForm.querySelectorAll("[required]"))
-    .filter(field => field.offsetParent !== null);
+  return Array.from(
+    waiverForm.querySelectorAll("[required]")
+  ).filter(
+    field => field.offsetParent !== null
+  );
 }
 
 function updateDeclinedToSignState() {
-  const isOverrideChecked = declinedToSignOverride.checked;
-  notesField.required = isOverrideChecked;
+  const isOverrideChecked =
+    declinedToSignOverride.checked;
+
+  notesField.required =
+    isOverrideChecked;
 
   if (declinedSignMarker) {
-    declinedSignMarker.classList.toggle("hidden", !isOverrideChecked);
+    declinedSignMarker.classList.toggle(
+      "hidden",
+      !isOverrideChecked
+    );
   }
 
   if (isOverrideChecked) {
-    notesField.placeholder = "Required: explain why the customer declined to sign the waiver.";
-    signatureCanvas.classList.add("signature-optional");
+    notesField.placeholder =
+      "Required: explain why the customer declined to sign the waiver.";
 
-    if (verificationSection) verificationSection.classList.add("hidden");
-    if (idVerifiedCheckbox) idVerifiedCheckbox.required = false;
+    signatureCanvas.classList.add(
+      "signature-optional"
+    );
 
-    // Customer ID photo is still required even when the customer declines to sign.
-    if (customerIdPhotoInput) customerIdPhotoInput.required = true;
+    if (verificationSection) {
+      verificationSection.classList.add(
+        "hidden"
+      );
+    }
+
+    if (idVerifiedCheckbox) {
+      idVerifiedCheckbox.required = false;
+    }
+
+    /*
+     * Customer ID photo remains required
+     * even when customer declines signature.
+     */
+    if (customerIdPhotoInput) {
+      customerIdPhotoInput.required = true;
+    }
   } else {
-    notesField.placeholder = "Optional notes about the service...";
-    signatureCanvas.classList.remove("signature-optional");
+    notesField.placeholder =
+      "Optional notes about the service...";
 
-    if (verificationSection) verificationSection.classList.remove("hidden");
-    if (idVerifiedCheckbox) idVerifiedCheckbox.required = true;
-    if (customerIdPhotoInput) customerIdPhotoInput.required = true;
+    signatureCanvas.classList.remove(
+      "signature-optional"
+    );
+
+    if (verificationSection) {
+      verificationSection.classList.remove(
+        "hidden"
+      );
+    }
+
+    if (idVerifiedCheckbox) {
+      idVerifiedCheckbox.required = true;
+    }
+
+    if (customerIdPhotoInput) {
+      customerIdPhotoInput.required = true;
+    }
   }
 }
 
@@ -305,84 +458,189 @@ function validateVisibleFields() {
   updateDeclinedToSignState();
   updateSections();
 
-  if (generalReleaseInitials && !generalReleaseInitials.value.trim()) {
-    alert("Customer initials are required for the General Release.");
+  if (
+    generalReleaseInitials &&
+    !generalReleaseInitials.value.trim()
+  ) {
+    alert(
+      "Customer initials are required for the General Release."
+    );
+
     generalReleaseInitials.focus();
+
     return false;
   }
 
-  const selected = jobType.value;
+  const selected =
+    jobType.value;
 
-  if (selected === "lockout" && lockoutInitials && !lockoutInitials.value.trim()) {
-    alert("Customer initials are required for the Lockout section.");
+  if (
+    selected === "lockout" &&
+    lockoutInitials &&
+    !lockoutInitials.value.trim()
+  ) {
+    alert(
+      "Customer initials are required for the Lockout section."
+    );
+
     lockoutInitials.focus();
+
     return false;
   }
 
-  if (selected === "tire" && tireInitials && !tireInitials.value.trim()) {
-    alert("Customer initials are required for the Tire Service section.");
+  if (
+    selected === "tire" &&
+    tireInitials &&
+    !tireInitials.value.trim()
+  ) {
+    alert(
+      "Customer initials are required for the Tire Service section."
+    );
+
     tireInitials.focus();
+
     return false;
   }
 
-  if (selected === "fuel" && fuelInitials && !fuelInitials.value.trim()) {
-    alert("Customer initials are required for the Fuel Delivery section.");
+  if (
+    selected === "fuel" &&
+    fuelInitials &&
+    !fuelInitials.value.trim()
+  ) {
+    alert(
+      "Customer initials are required for the Fuel Delivery section."
+    );
+
     fuelInitials.focus();
+
     return false;
   }
 
-  if (selected === "jump" && jumpInitials && !jumpInitials.value.trim()) {
-    alert("Customer initials are required for the Jump Start section.");
+  if (
+    selected === "jump" &&
+    jumpInitials &&
+    !jumpInitials.value.trim()
+  ) {
+    alert(
+      "Customer initials are required for the Jump Start section."
+    );
+
     jumpInitials.focus();
+
     return false;
   }
 
-  if (selected === "outofscope" && outOfScopeInitials && !outOfScopeInitials.value.trim()) {
-    alert("Customer initials are required for the Out of Scope section.");
+  if (
+    selected === "outofscope" &&
+    outOfScopeInitials &&
+    !outOfScopeInitials.value.trim()
+  ) {
+    alert(
+      "Customer initials are required for the Out of Scope section."
+    );
+
     outOfScopeInitials.focus();
+
     return false;
   }
 
   if (!declinedToSignOverride.checked) {
-    if (!idVerifiedCheckbox || !idVerifiedCheckbox.checked) {
-      alert("Driver must verify the customer's ID before submitting the waiver.");
-      if (idVerifiedCheckbox) idVerifiedCheckbox.focus();
+    if (
+      !idVerifiedCheckbox ||
+      !idVerifiedCheckbox.checked
+    ) {
+      alert(
+        "Driver must verify the customer's ID before submitting the waiver."
+      );
+
+      if (idVerifiedCheckbox) {
+        idVerifiedCheckbox.focus();
+      }
+
       return false;
     }
   }
 
-  if (!customerIdPhotoInput || !customerIdPhotoInput.files || customerIdPhotoInput.files.length === 0) {
-    alert("Customer ID photo is required before submitting the waiver.");
-    if (customerIdPhotoInput) customerIdPhotoInput.focus();
+  if (
+    !customerIdPhotoInput ||
+    !customerIdPhotoInput.files ||
+    customerIdPhotoInput.files.length === 0
+  ) {
+    alert(
+      "Customer ID photo is required before submitting the waiver."
+    );
+
+    if (customerIdPhotoInput) {
+      customerIdPhotoInput.focus();
+    }
+
     return false;
   }
 
-  for (const field of getVisibleRequiredFields()) {
-    if (field === notesField && declinedToSignOverride.checked && !field.value.trim()) {
-      alert("Additional Notes are required when the customer declines to sign.");
+  for (
+    const field of getVisibleRequiredFields()
+  ) {
+    if (
+      field === notesField &&
+      declinedToSignOverride.checked &&
+      !field.value.trim()
+    ) {
+      alert(
+        "Additional Notes are required when the customer declines to sign."
+      );
+
       field.focus();
+
       return false;
     }
 
     if (field.type === "radio") {
-      const group = waiverForm.querySelectorAll(`input[name="${field.name}"]`);
-      const oneChecked = Array.from(group).some(r => r.checked);
-      if (!oneChecked) return alertFail(field);
-    } else if (field.type === "checkbox") {
-      if (!field.checked) return alertFail(field);
-    } else if (field.type === "file") {
-      if (!field.files || field.files.length === 0) return alertFail(field);
-    } else if (!field.value.trim()) {
+      const group =
+        waiverForm.querySelectorAll(
+          `input[name="${field.name}"]`
+        );
+
+      const oneChecked =
+        Array.from(group).some(
+          radio => radio.checked
+        );
+
+      if (!oneChecked) {
+        return alertFail(field);
+      }
+    } else if (
+      field.type === "checkbox"
+    ) {
+      if (!field.checked) {
+        return alertFail(field);
+      }
+    } else if (
+      field.type === "file"
+    ) {
+      if (
+        !field.files ||
+        field.files.length === 0
+      ) {
+        return alertFail(field);
+      }
+    } else if (
+      !field.value.trim()
+    ) {
       return alertFail(field);
     }
   }
 
-  if (declinedToSignOverride.checked) {
+  if (
+    declinedToSignOverride.checked
+  ) {
     return true;
   }
 
   if (!hasSignature) {
-    alert("Customer signature is required unless the decline override box is checked.");
+    alert(
+      "Customer signature is required unless the decline override box is checked."
+    );
+
     return false;
   }
 
@@ -390,8 +648,12 @@ function validateVisibleFields() {
 }
 
 function alertFail(field) {
-  alert("Please complete all required fields.");
+  alert(
+    "Please complete all required fields."
+  );
+
   field.focus();
+
   return false;
 }
 
@@ -399,20 +661,33 @@ function alertFail(field) {
 
 function buildSaveTimestampText() {
   const now = new Date();
+
   return `Saved: ${now.toLocaleDateString()} ${now.toLocaleTimeString()}`;
 }
 
 function addCaptureTimestamp() {
-  const existing = document.getElementById("captureTimestampStamp");
-  if (existing) existing.remove();
+  const existing =
+    document.getElementById(
+      "captureTimestampStamp"
+    );
 
-  const stamp = document.createElement("div");
-  stamp.id = "captureTimestampStamp";
-  stamp.textContent = buildSaveTimestampText();
+  if (existing) {
+    existing.remove();
+  }
+
+  const stamp =
+    document.createElement("div");
+
+  stamp.id =
+    "captureTimestampStamp";
+
+  stamp.textContent =
+    buildSaveTimestampText();
 
   stamp.style.marginTop = "18px";
   stamp.style.paddingTop = "10px";
-  stamp.style.borderTop = "2px solid #d0d7de";
+  stamp.style.borderTop =
+    "2px solid #d0d7de";
   stamp.style.fontSize = "14px";
   stamp.style.fontWeight = "700";
   stamp.style.color = "#111";
@@ -420,446 +695,1183 @@ function addCaptureTimestamp() {
   stamp.style.background = "#fff";
 
   captureArea.appendChild(stamp);
+
   return stamp;
 }
 
 function removeCaptureTimestamp() {
-  const existing = document.getElementById("captureTimestampStamp");
-  if (existing) existing.remove();
+  const existing =
+    document.getElementById(
+      "captureTimestampStamp"
+    );
+
+  if (existing) {
+    existing.remove();
+  }
 }
 
-// ==================== SAVE IMAGE ====================
+// ==================== IMAGE HELPERS ====================
 
 async function canvasToBlob(canvas) {
   return await new Promise(resolve => {
-    canvas.toBlob(resolve, "image/jpeg", 0.85);
+    canvas.toBlob(
+      resolve,
+      "image/jpeg",
+      0.85
+    );
   });
 }
 
-async function saveImageFromCanvas(canvas, filename) {
-  const blob = await canvasToBlob(canvas);
+async function saveImageFromCanvas(
+  canvas,
+  filename
+) {
+  const blob =
+    await canvasToBlob(canvas);
 
   if (!blob) {
-    throw new Error("Could not create image file.");
+    throw new Error(
+      "Could not create image file."
+    );
   }
 
   if (!currentTowbookCallId) {
-    throw new Error("No Towbook call is loaded. Tap Generate Job Info first.");
+    throw new Error(
+      "No Towbook call is loaded. Tap Generate Job Info first."
+    );
   }
 
-  const formData = new FormData();
-  formData.append("file", blob, filename);
-  formData.append("job_number", jobNumberInput.value.trim());
-  formData.append("call_id", currentTowbookCallId);
+  const formData =
+    new FormData();
 
-  const res = await fetch(`${API_URL}/upload-waiver`, {
-    method: "POST",
-    credentials: "include",
-    body: formData
-  });
+  formData.append(
+    "file",
+    blob,
+    filename
+  );
 
-  const data = await res.json();
+  formData.append(
+    "job_number",
+    jobNumberInput.value.trim()
+  );
+
+  formData.append(
+    "call_id",
+    currentTowbookCallId
+  );
+
+  const res =
+    await fetch(
+      `${API_URL}/upload-waiver`,
+      {
+        method: "POST",
+        credentials: "include",
+        body: formData
+      }
+    );
+
+  const raw =
+    await res.text();
+
+  let data = {};
+
+  try {
+    data =
+      raw ? JSON.parse(raw) : {};
+  } catch (e) {
+    data = {
+      error:
+        raw ||
+        `Upload failed (${res.status})`
+    };
+  }
 
   if (!res.ok) {
-    throw new Error(data.error || data.message || "Upload failed.");
+    throw new Error(
+      data.error ||
+      data.message ||
+      "Upload failed."
+    );
   }
 
   return data;
 }
 
 function getUploadFileExtension(file) {
-  const name = (file && file.name ? file.name : "").toLowerCase();
-  const match = name.match(/\.[a-z0-9]{2,5}$/);
+  const name =
+    (
+      file &&
+      file.name
+        ? file.name
+        : ""
+    ).toLowerCase();
 
-  if (match) return match[0];
+  const match =
+    name.match(
+      /\.[a-z0-9]{2,5}$/
+    );
 
-  const type = file && file.type ? file.type.toLowerCase() : "";
+  if (match) {
+    return match[0];
+  }
 
-  if (type.includes("png")) return ".png";
-  if (type.includes("webp")) return ".webp";
-  if (type.includes("gif")) return ".gif";
-  if (type.includes("heic")) return ".heic";
-  if (type.includes("heif")) return ".heif";
+  const type =
+    file && file.type
+      ? file.type.toLowerCase()
+      : "";
+
+  if (type.includes("png")) {
+    return ".png";
+  }
+
+  if (type.includes("webp")) {
+    return ".webp";
+  }
+
+  if (type.includes("gif")) {
+    return ".gif";
+  }
+
+  if (type.includes("heic")) {
+    return ".heic";
+  }
+
+  if (type.includes("heif")) {
+    return ".heif";
+  }
 
   return ".jpg";
 }
 
-async function uploadFileToTowbook(file, filename) {
+async function uploadFileToTowbook(
+  file,
+  filename
+) {
   if (!file) {
-    throw new Error("Missing file to upload.");
+    throw new Error(
+      "Missing file to upload."
+    );
   }
 
   if (!currentTowbookCallId) {
-    throw new Error("No Towbook call is loaded. Tap Generate Job Info first.");
+    throw new Error(
+      "No Towbook call is loaded. Tap Generate Job Info first."
+    );
   }
 
-  const formData = new FormData();
-  formData.append("file", file, filename);
-  formData.append("job_number", jobNumberInput.value.trim());
-  formData.append("call_id", currentTowbookCallId);
+  const formData =
+    new FormData();
 
-  const res = await fetch(`${API_URL}/upload-waiver`, {
-    method: "POST",
-    credentials: "include",
-    body: formData
-  });
+  formData.append(
+    "file",
+    file,
+    filename
+  );
 
-  const data = await res.json();
+  formData.append(
+    "job_number",
+    jobNumberInput.value.trim()
+  );
+
+  formData.append(
+    "call_id",
+    currentTowbookCallId
+  );
+
+  const res =
+    await fetch(
+      `${API_URL}/upload-waiver`,
+      {
+        method: "POST",
+        credentials: "include",
+        body: formData
+      }
+    );
+
+  const raw =
+    await res.text();
+
+  let data = {};
+
+  try {
+    data =
+      raw ? JSON.parse(raw) : {};
+  } catch (e) {
+    data = {
+      error:
+        raw ||
+        `Upload failed (${res.status})`
+    };
+  }
 
   if (!res.ok) {
-    throw new Error(data.error || data.message || "Upload failed.");
+    throw new Error(
+      data.error ||
+      data.message ||
+      "Upload failed."
+    );
   }
 
   return data;
 }
 
-function splitCanvasIntoTwo(sourceCanvas) {
-  const width = sourceCanvas.width;
-  const height = sourceCanvas.height;
+function splitCanvasIntoTwo(
+  sourceCanvas
+) {
+  const width =
+    sourceCanvas.width;
 
-  const overlap = Math.floor(height * 0.08);
-  const halfHeight = Math.ceil(height / 2);
+  const height =
+    sourceCanvas.height;
 
-  const topHeight = Math.min(height, halfHeight + overlap);
-  const bottomStartY = Math.max(0, halfHeight - overlap);
-  const bottomHeight = height - bottomStartY;
+  const overlap =
+    Math.floor(
+      height * 0.08
+    );
 
-  const topCanvas = document.createElement("canvas");
-  topCanvas.width = width;
-  topCanvas.height = topHeight;
+  const halfHeight =
+    Math.ceil(
+      height / 2
+    );
 
-  const bottomCanvas = document.createElement("canvas");
-  bottomCanvas.width = width;
-  bottomCanvas.height = bottomHeight;
+  const topHeight =
+    Math.min(
+      height,
+      halfHeight + overlap
+    );
 
-  const topCtx = topCanvas.getContext("2d");
-  const bottomCtx = bottomCanvas.getContext("2d");
+  const bottomStartY =
+    Math.max(
+      0,
+      halfHeight - overlap
+    );
 
-  topCtx.fillStyle = "#fff";
-  topCtx.fillRect(0, 0, topCanvas.width, topCanvas.height);
+  const bottomHeight =
+    height - bottomStartY;
+
+  const topCanvas =
+    document.createElement(
+      "canvas"
+    );
+
+  topCanvas.width =
+    width;
+
+  topCanvas.height =
+    topHeight;
+
+  const bottomCanvas =
+    document.createElement(
+      "canvas"
+    );
+
+  bottomCanvas.width =
+    width;
+
+  bottomCanvas.height =
+    bottomHeight;
+
+  const topCtx =
+    topCanvas.getContext("2d");
+
+  const bottomCtx =
+    bottomCanvas.getContext("2d");
+
+  topCtx.fillStyle =
+    "#fff";
+
+  topCtx.fillRect(
+    0,
+    0,
+    topCanvas.width,
+    topCanvas.height
+  );
+
   topCtx.drawImage(
     sourceCanvas,
-    0, 0, width, topHeight,
-    0, 0, width, topHeight
+    0,
+    0,
+    width,
+    topHeight,
+    0,
+    0,
+    width,
+    topHeight
   );
 
-  bottomCtx.fillStyle = "#fff";
-  bottomCtx.fillRect(0, 0, bottomCanvas.width, bottomCanvas.height);
+  bottomCtx.fillStyle =
+    "#fff";
+
+  bottomCtx.fillRect(
+    0,
+    0,
+    bottomCanvas.width,
+    bottomCanvas.height
+  );
+
   bottomCtx.drawImage(
     sourceCanvas,
-    0, bottomStartY, width, bottomHeight,
-    0, 0, width, bottomHeight
+    0,
+    bottomStartY,
+    width,
+    bottomHeight,
+    0,
+    0,
+    width,
+    bottomHeight
   );
 
-  return [topCanvas, bottomCanvas];
+  return [
+    topCanvas,
+    bottomCanvas
+  ];
 }
 
-// ==================== TOWBOOK ====================
+// ==================== BUILD UPLOAD PACKAGE ====================
 
-function mapJobType(reason) {
-  const r = (reason || "").toLowerCase();
-
-  if (r.includes("jump")) return "jump";
-  if (r.includes("lockout")) return "lockout";
-  if (r.includes("tire")) return "tire";
-  if (r.includes("fuel")) return "fuel";
-  if (r.includes("scope")) return "outofscope";
-
-  return "";
-}
-
-async function pullFromTowbook(jobNumber) {
-  const res = await fetch(
-    `${API_URL}/towbook-call?jobNumber=${encodeURIComponent(jobNumber)}`,
-    {
-      credentials: "include"
-    }
-  );
-
-  const data = await res.json();
-
-  if (!res.ok) {
-    throw new Error(data.error || "Towbook error.");
-  }
-
-  document.getElementById("customerName").value = data.customer_name || "";
-  document.getElementById("phone").value = data.phone || "";
-  document.getElementById("vehicle").value = data.vehicle || "";
-  updatePoDisplay(data.po || "");
-  currentTowbookCallId = data.call_id || "";
-
-  if (data.job_type) {
-    const mapped = mapJobType(data.job_type);
-    if (mapped) {
-      jobType.value = mapped;
-      updateSections();
-    }
-  }
-}
-
-// ==================== BUTTON ====================
-
-if (pullBtn) {
-  if (TOWBOOK_PULL_DISABLED) {
-    pullBtn.disabled = true;
-    pullBtn.textContent = "Job Info Disabled";
-    pullBtn.title = "Temporary disable to reduce NAS load.";
-    pullBtn.style.background = "#666";
-  } else {
-    pullBtn.addEventListener("click", async () => {
-      const jobNum = jobNumberInput.value.trim();
-
-      if (!jobNum || jobNum.length < 3) {
-        alert("Please enter a valid Job Number first.");
-        return;
-      }
-
-      const originalText = pullBtn.textContent;
-      pullBtn.disabled = true;
-      pullBtn.textContent = "Generating Job Info...";
-      pullBtn.style.background = "#666";
-
-      try {
-        await pullFromTowbook(jobNum);
-        alert("✅ Job info generated successfully!");
-      } catch (err) {
-        console.error(err);
-        if ((err.message || "").toLowerCase().includes("login required")) {
-          showLoginScreen();
-          setLoginMessage("Your session expired. Please log in again.", "error");
-        }
-        alert(err.message || "Could not connect to Towbook.");
-      } finally {
-        pullBtn.disabled = false;
-        pullBtn.textContent = originalText;
-        pullBtn.style.background = "#1f6feb";
-      }
-    });
-  }
-}
-
-// ==================== EVENTS ====================
-
-jobType.addEventListener("change", () => {
-  updateSections();
-  clearPendingSecondImage();
-});
-
-declinedToSignOverride.addEventListener("change", updateDeclinedToSignState);
-
-jobNumberInput.addEventListener("input", () => {
+async function buildUploadPackage() {
   updateJobNumberDisplay();
-  clearPendingSecondImage();
-});
 
-jobNumberInput.addEventListener("change", async () => {
-  const jobNum = jobNumberInput.value.trim();
-  updateJobNumberDisplay();
-  clearPendingSecondImage();
-
-  if (!jobNum || TOWBOOK_PULL_DISABLED) return;
+  const stampElement =
+    addCaptureTimestamp();
 
   try {
-    await pullFromTowbook(jobNum);
-  } catch (err) {
-    console.error(err);
-  }
-});
+    const canvas =
+      await html2canvas(
+        captureArea,
+        {
+          scale: 2,
+          useCORS: true,
+          backgroundColor: "#fff",
+          windowWidth: 900,
 
-resetBtn.addEventListener("click", () => {
-  if (confirm("Start fresh?")) resetFormCompletely();
-});
+          onclone: clonedDoc => {
+            const clonedCaptureArea =
+              clonedDoc.getElementById(
+                "captureArea"
+              );
 
-saveBtn.addEventListener("click", async () => {
-  if (!validateVisibleFields()) return;
+            if (
+              clonedCaptureArea
+            ) {
+              clonedCaptureArea.style.width =
+                "900px";
 
-  saveBtn.disabled = true;
-  saveBtn.textContent = "Saving...";
+              clonedCaptureArea.style.maxWidth =
+                "900px";
 
-  let stampElement = null;
+              clonedCaptureArea.style.margin =
+                "0 auto";
 
-  try {
-    updateJobNumberDisplay();
+              clonedCaptureArea.style.background =
+                "#fff";
 
-    stampElement = addCaptureTimestamp();
+              clonedCaptureArea.style.padding =
+                "24px";
 
-    const canvas = await html2canvas(captureArea, {
-      scale: 2,
-      useCORS: true,
-      backgroundColor: "#fff",
-      windowWidth: 900,
-      onclone: clonedDoc => {
-        const clonedCaptureArea = clonedDoc.getElementById("captureArea");
-        if (clonedCaptureArea) {
-          clonedCaptureArea.style.width = "900px";
-          clonedCaptureArea.style.maxWidth = "900px";
-          clonedCaptureArea.style.margin = "0 auto";
-          clonedCaptureArea.style.background = "#fff";
-          clonedCaptureArea.style.padding = "24px";
-          clonedCaptureArea.style.boxSizing = "border-box";
+              clonedCaptureArea.style.boxSizing =
+                "border-box";
+            }
+          }
         }
-      }
-    });
+      );
 
-    const job = jobNumberInput.value.trim() || "NOJOB";
+    const job =
+      jobNumberInput.value.trim() ||
+      "NOJOB";
+
     const date =
-      document.getElementById("serviceDate").value ||
-      new Date().toISOString().split("T")[0];
-    const filenameBase = `${job}_${date}`;
+      document.getElementById(
+        "serviceDate"
+      ).value ||
+      new Date()
+        .toISOString()
+        .split("T")[0];
 
-    const [topCanvas, bottomCanvas] = splitCanvasIntoTwo(canvas);
+    const filenameBase =
+      `${job}_${date}`;
 
-    const file1 = `${filenameBase}_part1.jpg`;
-    const file2 = `${filenameBase}_part2.jpg`;
+    const [
+      topCanvas,
+      bottomCanvas
+    ] =
+      splitCanvasIntoTwo(
+        canvas
+      );
 
-    const customerIdFile = customerIdPhotoInput && customerIdPhotoInput.files
-      ? customerIdPhotoInput.files[0]
-      : null;
+    const customerIdFile =
+      customerIdPhotoInput &&
+      customerIdPhotoInput.files
+        ? customerIdPhotoInput.files[0]
+        : null;
 
     if (!customerIdFile) {
-      throw new Error("Customer ID photo is required before submitting the waiver.");
+      throw new Error(
+        "Customer ID photo is required before submitting the waiver."
+      );
     }
 
-    saveBtn.textContent = "Uploading Customer ID Photo...";
-    const idPhotoFilename = `${filenameBase}_customer_id${getUploadFileExtension(customerIdFile)}`;
-    await uploadFileToTowbook(customerIdFile, idPhotoFilename);
+    return {
+      jobNumber: job,
+      callId: currentTowbookCallId,
 
-    saveBtn.textContent = "Uploading Part 1...";
-    await saveImageFromCanvas(topCanvas, file1);
+      customerIdFile,
 
-    saveBtn.textContent = "Waiting before Part 2...";
-    await new Promise(resolve => setTimeout(resolve, 5000));
+      customerIdFilename:
+        `${filenameBase}_customer_id${getUploadFileExtension(customerIdFile)}`,
 
-    saveBtn.textContent = "Uploading Part 2...";
-    const result2 = await saveImageFromCanvas(bottomCanvas, file2);
+      topCanvas,
+      bottomCanvas,
 
-    removeCaptureTimestamp();
-    stampElement = null;
+      part1Filename:
+        `${filenameBase}_part1.jpg`,
 
-    alert(result2.message || "Customer ID photo and both waiver parts uploaded to Towbook.");
-    resetFormCompletely();
-  } catch (err) {
-    console.error(err);
-    alert(err.message || "Save failed.");
-    clearPendingSecondImage();
+      part2Filename:
+        `${filenameBase}_part2.jpg`,
+
+      progress:
+        newUploadProgress()
+    };
   } finally {
     if (stampElement) {
       removeCaptureTimestamp();
     }
   }
-});
+}
+
+// ==================== RUN / RESUME UPLOAD ====================
+
+async function runPendingUpload() {
+  if (!pendingUploadPackage) {
+    throw new Error(
+      "No upload package is ready."
+    );
+  }
+
+  const pkg =
+    pendingUploadPackage;
+
+  if (
+    jobNumberInput.value.trim() !==
+    pkg.jobNumber
+  ) {
+    throw new Error(
+      "The job number changed after the upload started. Start the waiver again."
+    );
+  }
+
+  if (
+    currentTowbookCallId !==
+    pkg.callId
+  ) {
+    throw new Error(
+      "The Towbook call changed after the upload started. Start the waiver again."
+    );
+  }
+
+  /*
+   * STEP 1:
+   * Customer ID
+   */
+  if (
+    !pkg.progress.idUploaded
+  ) {
+    saveBtn.textContent =
+      "Uploading Customer ID Photo...";
+
+    await uploadFileToTowbook(
+      pkg.customerIdFile,
+      pkg.customerIdFilename
+    );
+
+    /*
+     * We only mark it complete after
+     * the backend returns success.
+     */
+    pkg.progress.idUploaded =
+      true;
+
+    console.log(
+      "Customer ID upload completed."
+    );
+  }
+
+  /*
+   * STEP 2:
+   * Waiver Part 1
+   */
+  if (
+    !pkg.progress.part1Uploaded
+  ) {
+    saveBtn.textContent =
+      "Uploading Waiver Part 1...";
+
+    await saveImageFromCanvas(
+      pkg.topCanvas,
+      pkg.part1Filename
+    );
+
+    pkg.progress.part1Uploaded =
+      true;
+
+    console.log(
+      "Waiver Part 1 upload completed."
+    );
+  }
+
+  /*
+   * STEP 3:
+   * Waiver Part 2
+   *
+   * NO unnecessary 5-second pause.
+   * Part 1 has already fully returned
+   * before this request begins.
+   */
+  if (
+    !pkg.progress.part2Uploaded
+  ) {
+    saveBtn.textContent =
+      "Uploading Waiver Part 2...";
+
+    await saveImageFromCanvas(
+      pkg.bottomCanvas,
+      pkg.part2Filename
+    );
+
+    pkg.progress.part2Uploaded =
+      true;
+
+    console.log(
+      "Waiver Part 2 upload completed."
+    );
+  }
+
+  return (
+    pkg.progress.idUploaded &&
+    pkg.progress.part1Uploaded &&
+    pkg.progress.part2Uploaded
+  );
+}
+
+// ==================== TOWBOOK ====================
+
+function mapJobType(reason) {
+  const r =
+    (reason || "")
+      .toLowerCase();
+
+  if (r.includes("jump")) {
+    return "jump";
+  }
+
+  if (r.includes("lockout")) {
+    return "lockout";
+  }
+
+  if (r.includes("tire")) {
+    return "tire";
+  }
+
+  if (r.includes("fuel")) {
+    return "fuel";
+  }
+
+  if (r.includes("scope")) {
+    return "outofscope";
+  }
+
+  return "";
+}
+
+async function pullFromTowbook(
+  jobNumber
+) {
+  const res =
+    await fetch(
+      `${API_URL}/towbook-call?jobNumber=${encodeURIComponent(jobNumber)}`,
+      {
+        credentials: "include"
+      }
+    );
+
+  const raw =
+    await res.text();
+
+  let data = {};
+
+  try {
+    data =
+      raw ? JSON.parse(raw) : {};
+  } catch (e) {
+    throw new Error(
+      raw ||
+      `Towbook request failed (${res.status})`
+    );
+  }
+
+  if (!res.ok) {
+    throw new Error(
+      data.error ||
+      "Towbook error."
+    );
+  }
+
+  document.getElementById(
+    "customerName"
+  ).value =
+    data.customer_name || "";
+
+  document.getElementById(
+    "phone"
+  ).value =
+    data.phone || "";
+
+  document.getElementById(
+    "vehicle"
+  ).value =
+    data.vehicle || "";
+
+  updatePoDisplay(
+    data.po || ""
+  );
+
+  currentTowbookCallId =
+    data.call_id || "";
+
+  if (data.job_type) {
+    const mapped =
+      mapJobType(
+        data.job_type
+      );
+
+    if (mapped) {
+      jobType.value =
+        mapped;
+
+      updateSections();
+    }
+  }
+}
+
+// ==================== TOWBOOK BUTTON ====================
+
+if (pullBtn) {
+  if (
+    TOWBOOK_PULL_DISABLED
+  ) {
+    pullBtn.disabled =
+      true;
+
+    pullBtn.textContent =
+      "Job Info Disabled";
+
+    pullBtn.title =
+      "Temporary disable to reduce NAS load.";
+
+    pullBtn.style.background =
+      "#666";
+  } else {
+    pullBtn.addEventListener(
+      "click",
+      async () => {
+        const jobNum =
+          jobNumberInput.value.trim();
+
+        if (
+          !jobNum ||
+          jobNum.length < 3
+        ) {
+          alert(
+            "Please enter a valid Job Number first."
+          );
+
+          return;
+        }
+
+        clearPendingUpload();
+
+        const originalText =
+          pullBtn.textContent;
+
+        pullBtn.disabled =
+          true;
+
+        pullBtn.textContent =
+          "Generating Job Info...";
+
+        pullBtn.style.background =
+          "#666";
+
+        try {
+          await pullFromTowbook(
+            jobNum
+          );
+
+          alert(
+            "✅ Job info generated successfully!"
+          );
+        } catch (err) {
+          console.error(err);
+
+          if (
+            (
+              err.message || ""
+            )
+              .toLowerCase()
+              .includes(
+                "login required"
+              )
+          ) {
+            showLoginScreen();
+
+            setLoginMessage(
+              "Your session expired. Please log in again.",
+              "error"
+            );
+          }
+
+          alert(
+            err.message ||
+            "Could not connect to Towbook."
+          );
+        } finally {
+          pullBtn.disabled =
+            false;
+
+          pullBtn.textContent =
+            originalText;
+
+          pullBtn.style.background =
+            "#1f6feb";
+        }
+      }
+    );
+  }
+}
+
+// ==================== EVENTS ====================
+
+jobType.addEventListener(
+  "change",
+  () => {
+    updateSections();
+    clearPendingUpload();
+  }
+);
+
+declinedToSignOverride.addEventListener(
+  "change",
+  () => {
+    updateDeclinedToSignState();
+    clearPendingUpload();
+  }
+);
+
+jobNumberInput.addEventListener(
+  "input",
+  () => {
+    updateJobNumberDisplay();
+
+    /*
+     * Changing the job invalidates any
+     * partially-created upload package.
+     */
+    clearPendingUpload();
+  }
+);
+
+jobNumberInput.addEventListener(
+  "change",
+  async () => {
+    const jobNum =
+      jobNumberInput.value.trim();
+
+    updateJobNumberDisplay();
+    clearPendingUpload();
+
+    if (
+      !jobNum ||
+      TOWBOOK_PULL_DISABLED
+    ) {
+      return;
+    }
+
+    try {
+      await pullFromTowbook(
+        jobNum
+      );
+    } catch (err) {
+      console.error(err);
+    }
+  }
+);
+
+resetBtn.addEventListener(
+  "click",
+  () => {
+    if (
+      confirm(
+        "Start fresh?"
+      )
+    ) {
+      resetFormCompletely();
+    }
+  }
+);
+
+// ==================== SAVE / RETRY BUTTON ====================
+
+saveBtn.addEventListener(
+  "click",
+  async () => {
+    /*
+     * First press:
+     * validate and build the waiver images.
+     *
+     * Retry press:
+     * reuse existing package and skip
+     * already-successful uploads.
+     */
+    if (
+      !pendingUploadPackage
+    ) {
+      if (
+        !validateVisibleFields()
+      ) {
+        return;
+      }
+
+      if (
+        !currentTowbookCallId
+      ) {
+        alert(
+          "No Towbook call is loaded. Tap Generate Job Info first."
+        );
+
+        return;
+      }
+
+      saveBtn.disabled =
+        true;
+
+      saveBtn.textContent =
+        "Preparing Waiver...";
+
+      try {
+        pendingUploadPackage =
+          await buildUploadPackage();
+      } catch (err) {
+        console.error(err);
+
+        saveBtn.disabled =
+          false;
+
+        saveBtn.textContent =
+          "Upload Form";
+
+        alert(
+          err.message ||
+          "Could not prepare waiver."
+        );
+
+        return;
+      }
+    }
+
+    saveBtn.disabled =
+      true;
+
+    try {
+      const completed =
+        await runPendingUpload();
+
+      if (!completed) {
+        throw new Error(
+          "The upload did not complete."
+        );
+      }
+
+      alert(
+        "Customer ID photo and both waiver pages uploaded successfully to Towbook."
+      );
+
+      /*
+       * Only clear the form after
+       * ALL THREE uploads succeed.
+       */
+      resetFormCompletely();
+    } catch (err) {
+      console.error(
+        "UPLOAD_SEQUENCE_ERROR:",
+        err
+      );
+
+      /*
+       * IMPORTANT:
+       * Do NOT clear pendingUploadPackage.
+       *
+       * That is what allows a retry to
+       * resume at the failed step.
+       */
+      updateRetryButton();
+
+      alert(
+        `${err.message || "Upload failed."}\n\nYour completed uploads were preserved. Tap the retry button to continue from the failed step.`
+      );
+    }
+  }
+);
 
 // ==================== SIGNATURE ====================
 
 function resizeCanvas() {
-  const ratio = Math.max(window.devicePixelRatio || 1, 1);
-  const rect = signatureCanvas.getBoundingClientRect();
+  const ratio =
+    Math.max(
+      window.devicePixelRatio || 1,
+      1
+    );
 
-  signatureCanvas.width = rect.width * ratio;
-  signatureCanvas.height = rect.height * ratio;
+  const rect =
+    signatureCanvas.getBoundingClientRect();
 
-  sigCtx = signatureCanvas.getContext("2d");
-  sigCtx.setTransform(1, 0, 0, 1, 0, 0);
-  sigCtx.scale(ratio, ratio);
-  sigCtx.lineWidth = 2;
-  sigCtx.lineCap = "round";
-  sigCtx.strokeStyle = "#000";
+  signatureCanvas.width =
+    rect.width * ratio;
+
+  signatureCanvas.height =
+    rect.height * ratio;
+
+  sigCtx =
+    signatureCanvas.getContext(
+      "2d"
+    );
+
+  sigCtx.setTransform(
+    1,
+    0,
+    0,
+    1,
+    0,
+    0
+  );
+
+  sigCtx.scale(
+    ratio,
+    ratio
+  );
+
+  sigCtx.lineWidth =
+    2;
+
+  sigCtx.lineCap =
+    "round";
+
+  sigCtx.strokeStyle =
+    "#000";
 }
 
 function setupSignaturePad() {
   resizeCanvas();
 
-  signatureCanvas.addEventListener("pointerdown", startDraw);
-  signatureCanvas.addEventListener("pointermove", draw);
-  window.addEventListener("pointerup", endDraw);
-  signatureCanvas.addEventListener("pointerleave", endDraw);
+  signatureCanvas.addEventListener(
+    "pointerdown",
+    startDraw
+  );
 
-  clearSignatureBtn.addEventListener("click", clearSignature);
-  window.addEventListener("resize", handleCanvasResize);
+  signatureCanvas.addEventListener(
+    "pointermove",
+    draw
+  );
+
+  window.addEventListener(
+    "pointerup",
+    endDraw
+  );
+
+  signatureCanvas.addEventListener(
+    "pointerleave",
+    endDraw
+  );
+
+  clearSignatureBtn.addEventListener(
+    "click",
+    clearSignature
+  );
+
+  window.addEventListener(
+    "resize",
+    handleCanvasResize
+  );
 }
 
 function handleCanvasResize() {
-  if (appScreen.classList.contains("hidden")) return;
+  if (
+    appScreen.classList.contains(
+      "hidden"
+    )
+  ) {
+    return;
+  }
 
-  const existing = signatureCanvas.toDataURL();
+  const existing =
+    signatureCanvas.toDataURL();
+
   resizeCanvas();
 
-  const img = new Image();
-  img.onload = () => {
-    sigCtx.drawImage(img, 0, 0, signatureCanvas.clientWidth, signatureCanvas.clientHeight);
-  };
-  img.src = existing;
+  const img =
+    new Image();
+
+  img.onload =
+    () => {
+      sigCtx.drawImage(
+        img,
+        0,
+        0,
+        signatureCanvas.clientWidth,
+        signatureCanvas.clientHeight
+      );
+    };
+
+  img.src =
+    existing;
 }
 
 function getPoint(e) {
-  const rect = signatureCanvas.getBoundingClientRect();
+  const rect =
+    signatureCanvas.getBoundingClientRect();
 
-  if (e.touches && e.touches.length > 0) {
+  if (
+    e.touches &&
+    e.touches.length > 0
+  ) {
     return {
-      x: e.touches[0].clientX - rect.left,
-      y: e.touches[0].clientY - rect.top
+      x:
+        e.touches[0].clientX -
+        rect.left,
+
+      y:
+        e.touches[0].clientY -
+        rect.top
     };
   }
 
   return {
-    x: e.clientX - rect.left,
-    y: e.clientY - rect.top
+    x:
+      e.clientX -
+      rect.left,
+
+    y:
+      e.clientY -
+      rect.top
   };
 }
 
 function startDraw(e) {
   e.preventDefault();
-  drawing = true;
-  hasSignature = true;
-  const p = getPoint(e);
+
+  drawing =
+    true;
+
+  hasSignature =
+    true;
+
+  const point =
+    getPoint(e);
+
   sigCtx.beginPath();
-  sigCtx.moveTo(p.x, p.y);
+
+  sigCtx.moveTo(
+    point.x,
+    point.y
+  );
 }
 
 function draw(e) {
-  if (!drawing) return;
+  if (!drawing) {
+    return;
+  }
+
   e.preventDefault();
-  const p = getPoint(e);
-  sigCtx.lineTo(p.x, p.y);
+
+  const point =
+    getPoint(e);
+
+  sigCtx.lineTo(
+    point.x,
+    point.y
+  );
+
   sigCtx.stroke();
 }
 
 function endDraw() {
-  drawing = false;
+  drawing =
+    false;
 }
 
 function clearSignature() {
-  if (!sigCtx) return;
-  sigCtx.clearRect(0, 0, signatureCanvas.width, signatureCanvas.height);
-  hasSignature = false;
+  if (!sigCtx) {
+    return;
+  }
+
+  sigCtx.clearRect(
+    0,
+    0,
+    signatureCanvas.width,
+    signatureCanvas.height
+  );
+
+  hasSignature =
+    false;
 }
 
 // ==================== INIT ====================
 
-let signatureInitialized = false;
+let signatureInitialized =
+  false;
 
 function ensureSignaturePadReady() {
-  if (!signatureInitialized) {
+  if (
+    !signatureInitialized
+  ) {
     setupSignaturePad();
-    signatureInitialized = true;
+
+    signatureInitialized =
+      true;
   } else {
     resizeCanvas();
   }
 }
 
-window.addEventListener("load", async () => {
-  updateSections();
-  setTodayDate();
-  updateJobNumberDisplay();
-  updatePoDisplay("");
-  updateDeclinedToSignState();
+window.addEventListener(
+  "load",
+  async () => {
+    updateSections();
+    setTodayDate();
+    updateJobNumberDisplay();
+    updatePoDisplay("");
+    updateDeclinedToSignState();
 
-  initialsFields.forEach(field => {
-    if (!field) return;
-    field.addEventListener("input", () => {
-      field.value = field.value.toUpperCase().replace(/[^A-Z]/g, "");
-    });
-  });
+    initialsFields.forEach(
+      field => {
+        if (!field) {
+          return;
+        }
 
-  await checkAuthStatus();
-});
+        field.addEventListener(
+          "input",
+          () => {
+            field.value =
+              field.value
+                .toUpperCase()
+                .replace(
+                  /[^A-Z]/g,
+                  ""
+                );
+          }
+        );
+      }
+    );
+
+    await checkAuthStatus();
+  }
+);
