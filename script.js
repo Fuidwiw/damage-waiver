@@ -15,6 +15,7 @@ const waiverForm = document.getElementById("waiverForm");
 const captureArea = document.getElementById("captureArea");
 const saveBtn = document.getElementById("saveBtn");
 const resetBtn = document.getElementById("resetBtn");
+const uploadReceipt = document.getElementById("uploadReceipt");
 
 const jobNumberInput = document.getElementById("jobNumber");
 const jobNumberDisplay = document.getElementById("jobNumberDisplay");
@@ -329,34 +330,39 @@ function clearPendingUpload() {
 
 function updateRetryButton() {
   saveBtn.disabled = false;
+  saveBtn.textContent = pendingUploadPackage
+    ? "Retry Sending Waiver"
+    : "Upload Form";
+}
 
-  if (!pendingUploadPackage) {
-    saveBtn.textContent = "Upload Form";
-    return;
+function createSubmissionId() {
+  if (window.crypto && typeof window.crypto.randomUUID === "function") {
+    return window.crypto.randomUUID();
   }
 
-  const progress =
-    pendingUploadPackage.progress;
+  return `waiver_${Date.now()}_${Math.random().toString(36).slice(2, 12)}`;
+}
 
-  if (!progress.idUploaded) {
-    saveBtn.textContent =
-      "Retry Customer ID Upload";
-    return;
-  }
+function hideUploadReceipt() {
+  if (!uploadReceipt) return;
+  uploadReceipt.classList.add("hidden");
+  uploadReceipt.innerHTML = "";
+}
 
-  if (!progress.part1Uploaded) {
-    saveBtn.textContent =
-      "Retry Waiver Part 1";
-    return;
-  }
+function showUploadReceipt(data) {
+  if (!uploadReceipt) return;
 
-  if (!progress.part2Uploaded) {
-    saveBtn.textContent =
-      "Retry Waiver Part 2";
-    return;
-  }
+  const submissionId = data && data.submission_id
+    ? data.submission_id
+    : "received";
 
-  saveBtn.textContent = "Upload Form";
+  uploadReceipt.innerHTML = `
+    <strong>✓ Waiver received by server.</strong><br>
+    You may close this page or start the next job. The server will continue uploading the customer ID and both waiver pages to Towbook automatically.<br>
+    <small>Submission: ${submissionId}</small>
+  `;
+
+  uploadReceipt.classList.remove("hidden");
 }
 
 // ==================== RESET ====================
@@ -1032,76 +1038,42 @@ function splitCanvasIntoTwo(
 async function buildUploadPackage() {
   updateJobNumberDisplay();
 
-  const stampElement =
-    addCaptureTimestamp();
+  const stampElement = addCaptureTimestamp();
 
   try {
-    const canvas =
-      await html2canvas(
-        captureArea,
-        {
-          scale: 2,
-          useCORS: true,
-          backgroundColor: "#fff",
-          windowWidth: 900,
+    const canvas = await html2canvas(
+      captureArea,
+      {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#fff",
+        windowWidth: 900,
 
-          onclone: clonedDoc => {
-            const clonedCaptureArea =
-              clonedDoc.getElementById(
-                "captureArea"
-              );
+        onclone: clonedDoc => {
+          const clonedCaptureArea = clonedDoc.getElementById("captureArea");
 
-            if (
-              clonedCaptureArea
-            ) {
-              clonedCaptureArea.style.width =
-                "900px";
-
-              clonedCaptureArea.style.maxWidth =
-                "900px";
-
-              clonedCaptureArea.style.margin =
-                "0 auto";
-
-              clonedCaptureArea.style.background =
-                "#fff";
-
-              clonedCaptureArea.style.padding =
-                "24px";
-
-              clonedCaptureArea.style.boxSizing =
-                "border-box";
-            }
+          if (clonedCaptureArea) {
+            clonedCaptureArea.style.width = "900px";
+            clonedCaptureArea.style.maxWidth = "900px";
+            clonedCaptureArea.style.margin = "0 auto";
+            clonedCaptureArea.style.background = "#fff";
+            clonedCaptureArea.style.padding = "24px";
+            clonedCaptureArea.style.boxSizing = "border-box";
           }
         }
-      );
+      }
+    );
 
-    const job =
-      jobNumberInput.value.trim() ||
-      "NOJOB";
-
+    const job = jobNumberInput.value.trim() || "NOJOB";
     const date =
-      document.getElementById(
-        "serviceDate"
-      ).value ||
-      new Date()
-        .toISOString()
-        .split("T")[0];
+      document.getElementById("serviceDate").value ||
+      new Date().toISOString().split("T")[0];
+    const filenameBase = `${job}_${date}`;
 
-    const filenameBase =
-      `${job}_${date}`;
-
-    const [
-      topCanvas,
-      bottomCanvas
-    ] =
-      splitCanvasIntoTwo(
-        canvas
-      );
+    const [topCanvas, bottomCanvas] = splitCanvasIntoTwo(canvas);
 
     const customerIdFile =
-      customerIdPhotoInput &&
-      customerIdPhotoInput.files
+      customerIdPhotoInput && customerIdPhotoInput.files
         ? customerIdPhotoInput.files[0]
         : null;
 
@@ -1111,26 +1083,24 @@ async function buildUploadPackage() {
       );
     }
 
+    const part1Blob = await canvasToBlob(topCanvas);
+    const part2Blob = await canvasToBlob(bottomCanvas);
+
+    if (!part1Blob || !part2Blob) {
+      throw new Error("Could not create both waiver image files.");
+    }
+
     return {
+      submissionId: createSubmissionId(),
       jobNumber: job,
       callId: currentTowbookCallId,
-
       customerIdFile,
-
       customerIdFilename:
         `${filenameBase}_customer_id${getUploadFileExtension(customerIdFile)}`,
-
-      topCanvas,
-      bottomCanvas,
-
-      part1Filename:
-        `${filenameBase}_part1.jpg`,
-
-      part2Filename:
-        `${filenameBase}_part2.jpg`,
-
-      progress:
-        newUploadProgress()
+      part1Blob,
+      part2Blob,
+      part1Filename: `${filenameBase}_part1.jpg`,
+      part2Filename: `${filenameBase}_part2.jpg`
     };
   } finally {
     if (stampElement) {
@@ -1139,118 +1109,57 @@ async function buildUploadPackage() {
   }
 }
 
-// ==================== RUN / RESUME UPLOAD ====================
-
-async function runPendingUpload() {
+async function queuePendingUpload() {
   if (!pendingUploadPackage) {
-    throw new Error(
-      "No upload package is ready."
-    );
+    throw new Error("No upload package is ready.");
   }
 
-  const pkg =
-    pendingUploadPackage;
+  const pkg = pendingUploadPackage;
 
-  if (
-    jobNumberInput.value.trim() !==
-    pkg.jobNumber
-  ) {
+  if (jobNumberInput.value.trim() !== pkg.jobNumber) {
     throw new Error(
       "The job number changed after the upload started. Start the waiver again."
     );
   }
 
-  if (
-    currentTowbookCallId !==
-    pkg.callId
-  ) {
+  if (currentTowbookCallId !== pkg.callId) {
     throw new Error(
       "The Towbook call changed after the upload started. Start the waiver again."
     );
   }
 
-  /*
-   * STEP 1:
-   * Customer ID
-   */
-  if (
-    !pkg.progress.idUploaded
-  ) {
-    saveBtn.textContent =
-      "Uploading Customer ID Photo...";
+  const formData = new FormData();
+  formData.append("submission_id", pkg.submissionId);
+  formData.append("job_number", pkg.jobNumber);
+  formData.append("call_id", pkg.callId);
+  formData.append("customer_id", pkg.customerIdFile, pkg.customerIdFilename);
+  formData.append("part1", pkg.part1Blob, pkg.part1Filename);
+  formData.append("part2", pkg.part2Blob, pkg.part2Filename);
 
-    await uploadFileToTowbook(
-      pkg.customerIdFile,
-      pkg.customerIdFilename
-    );
+  const res = await fetch(`${API_URL}/queue-waiver`, {
+    method: "POST",
+    credentials: "include",
+    body: formData
+  });
 
-    /*
-     * We only mark it complete after
-     * the backend returns success.
-     */
-    pkg.progress.idUploaded =
-      true;
+  const raw = await res.text();
+  let data = {};
 
-    console.log(
-      "Customer ID upload completed."
+  try {
+    data = raw ? JSON.parse(raw) : {};
+  } catch (e) {
+    data = {
+      error: raw || `Queue request failed (${res.status})`
+    };
+  }
+
+  if (!res.ok) {
+    throw new Error(
+      data.error || data.message || "Could not send waiver to the server."
     );
   }
 
-  /*
-   * STEP 2:
-   * Waiver Part 1
-   */
-  if (
-    !pkg.progress.part1Uploaded
-  ) {
-    saveBtn.textContent =
-      "Uploading Waiver Part 1...";
-
-    await saveImageFromCanvas(
-      pkg.topCanvas,
-      pkg.part1Filename
-    );
-
-    pkg.progress.part1Uploaded =
-      true;
-
-    console.log(
-      "Waiver Part 1 upload completed."
-    );
-  }
-
-  /*
-   * STEP 3:
-   * Waiver Part 2
-   *
-   * NO unnecessary 5-second pause.
-   * Part 1 has already fully returned
-   * before this request begins.
-   */
-  if (
-    !pkg.progress.part2Uploaded
-  ) {
-    saveBtn.textContent =
-      "Uploading Waiver Part 2...";
-
-    await saveImageFromCanvas(
-      pkg.bottomCanvas,
-      pkg.part2Filename
-    );
-
-    pkg.progress.part2Uploaded =
-      true;
-
-    console.log(
-      "Waiver Part 2 upload completed."
-    );
-  }
-
-  return (
-    pkg.progress.idUploaded &&
-    pkg.progress.part1Uploaded &&
-    pkg.progress.part2Uploaded
-  );
+  return data;
 }
 
 // ==================== TOWBOOK ====================
@@ -1470,6 +1379,7 @@ declinedToSignOverride.addEventListener(
 jobNumberInput.addEventListener(
   "input",
   () => {
+    hideUploadReceipt();
     updateJobNumberDisplay();
 
     /*
@@ -1514,6 +1424,7 @@ resetBtn.addEventListener(
         "Start fresh?"
       )
     ) {
+      hideUploadReceipt();
       resetFormCompletely();
     }
   }
@@ -1524,99 +1435,53 @@ resetBtn.addEventListener(
 saveBtn.addEventListener(
   "click",
   async () => {
-    /*
-     * First press:
-     * validate and build the waiver images.
-     *
-     * Retry press:
-     * reuse existing package and skip
-     * already-successful uploads.
-     */
-    if (
-      !pendingUploadPackage
-    ) {
-      if (
-        !validateVisibleFields()
-      ) {
+    if (!pendingUploadPackage) {
+      if (!validateVisibleFields()) {
         return;
       }
 
-      if (
-        !currentTowbookCallId
-      ) {
+      if (!currentTowbookCallId) {
         alert(
           "No Towbook call is loaded. Tap Generate Job Info first."
         );
-
         return;
       }
 
-      saveBtn.disabled =
-        true;
-
-      saveBtn.textContent =
-        "Preparing Waiver...";
+      hideUploadReceipt();
+      saveBtn.disabled = true;
+      saveBtn.textContent = "Preparing Waiver...";
 
       try {
-        pendingUploadPackage =
-          await buildUploadPackage();
+        pendingUploadPackage = await buildUploadPackage();
       } catch (err) {
         console.error(err);
-
-        saveBtn.disabled =
-          false;
-
-        saveBtn.textContent =
-          "Upload Form";
-
-        alert(
-          err.message ||
-          "Could not prepare waiver."
-        );
-
+        saveBtn.disabled = false;
+        saveBtn.textContent = "Upload Form";
+        alert(err.message || "Could not prepare waiver.");
         return;
       }
     }
 
-    saveBtn.disabled =
-      true;
+    saveBtn.disabled = true;
+    saveBtn.textContent = "Sending Waiver to Server...";
 
     try {
-      const completed =
-        await runPendingUpload();
+      const result = await queuePendingUpload();
 
-      if (!completed) {
-        throw new Error(
-          "The upload did not complete."
-        );
-      }
+      showUploadReceipt(result);
 
-      alert(
-        "Customer ID photo and both waiver pages uploaded successfully to Towbook."
-      );
-
-      /*
-       * Only clear the form after
-       * ALL THREE uploads succeed.
-       */
+      // The server has durably stored all three files at this point.
+      // The phone/browser is no longer responsible for the Towbook upload.
       resetFormCompletely();
     } catch (err) {
-      console.error(
-        "UPLOAD_SEQUENCE_ERROR:",
-        err
-      );
+      console.error("QUEUE_WAIVER_ERROR:", err);
 
-      /*
-       * IMPORTANT:
-       * Do NOT clear pendingUploadPackage.
-       *
-       * That is what allows a retry to
-       * resume at the failed step.
-       */
+      // Keep the complete package in browser memory so a network failure can
+      // retry the exact same submission ID without creating duplicates.
       updateRetryButton();
 
       alert(
-        `${err.message || "Upload failed."}\n\nYour completed uploads were preserved. Tap the retry button to continue from the failed step.`
+        `${err.message || "Could not send waiver to the server."}\n\nThe waiver is still on this device. Tap Retry Sending Waiver.`
       );
     }
   }
