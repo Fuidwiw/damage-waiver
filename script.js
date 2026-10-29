@@ -430,11 +430,11 @@ function updateDeclinedToSignState() {
     }
 
     /*
-     * Customer ID photo remains required
-     * even when customer declines signature.
+     * If the customer declines to sign, they may also refuse to provide ID.
+     * In that case the ID photo is intentionally not required.
      */
     if (customerIdPhotoInput) {
-      customerIdPhotoInput.required = true;
+      customerIdPhotoInput.required = false;
     }
   } else {
     notesField.placeholder =
@@ -568,9 +568,12 @@ function validateVisibleFields() {
   }
 
   if (
-    !customerIdPhotoInput ||
-    !customerIdPhotoInput.files ||
-    customerIdPhotoInput.files.length === 0
+    !declinedToSignOverride.checked &&
+    (
+      !customerIdPhotoInput ||
+      !customerIdPhotoInput.files ||
+      customerIdPhotoInput.files.length === 0
+    )
   ) {
     alert(
       "Customer ID photo is required before submitting the waiver."
@@ -1077,7 +1080,7 @@ async function buildUploadPackage() {
         ? customerIdPhotoInput.files[0]
         : null;
 
-    if (!customerIdFile) {
+    if (!declinedToSignOverride.checked && !customerIdFile) {
       throw new Error(
         "Customer ID photo is required before submitting the waiver."
       );
@@ -1094,9 +1097,11 @@ async function buildUploadPackage() {
       submissionId: createSubmissionId(),
       jobNumber: job,
       callId: currentTowbookCallId,
+      declinedToSign: declinedToSignOverride.checked,
       customerIdFile,
-      customerIdFilename:
-        `${filenameBase}_customer_id${getUploadFileExtension(customerIdFile)}`,
+      customerIdFilename: customerIdFile
+        ? `${filenameBase}_customer_id${getUploadFileExtension(customerIdFile)}`
+        : null,
       part1Blob,
       part2Blob,
       part1Filename: `${filenameBase}_part1.jpg`,
@@ -1132,7 +1137,10 @@ async function queuePendingUpload() {
   formData.append("submission_id", pkg.submissionId);
   formData.append("job_number", pkg.jobNumber);
   formData.append("call_id", pkg.callId);
-  formData.append("customer_id", pkg.customerIdFile, pkg.customerIdFilename);
+  formData.append("declined_to_sign", pkg.declinedToSign ? "true" : "false");
+  if (pkg.customerIdFile) {
+    formData.append("customer_id", pkg.customerIdFile, pkg.customerIdFilename);
+  }
   formData.append("part1", pkg.part1Blob, pkg.part1Filename);
   formData.append("part2", pkg.part2Blob, pkg.part2Filename);
 
